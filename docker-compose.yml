@@ -1,0 +1,17 @@
+version: '3.6'
+
+services:
+  routing_table_raft:
+    image: johncapobianco/routing_table_raft:routing_table_raft
+    container_name: routing_table_raft
+    restart: always     
+    build: 
+      context: ./
+      dockerfile: ./docker/Dockerfile
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]       

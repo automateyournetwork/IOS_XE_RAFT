@@ -1,0 +1,1 @@
+{"input": "What is my default route?", "output": {"question": "What is my default route?", "chat_history": [], "answer": " Your default route is 10.255.255.0/24. The outgoing interface for your default route is GigabitEthernet1, and it has been assigned the IP address of 10.10.20.254.\n"}}
