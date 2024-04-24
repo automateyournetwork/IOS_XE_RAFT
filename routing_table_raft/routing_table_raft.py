@@ -13,17 +13,22 @@ from langchain_experimental.text_splitter import SemanticChunker
 from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 from accelerate import FullyShardedDataParallelPlugin, Accelerator
 from torch.distributed.fsdp.fully_sharded_data_parallel import FullOptimStateDictConfig, FullStateDictConfig
-from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, DataCollatorForLanguageModeling, BitsAndBytesConfig
+from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, DataCollatorForLanguageModeling
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+
 
 # Initialize wandb
 wandb.login()
 os.environ["WANDB_PROJECT"] = "phi2-finetune" if "phi2-finetune" else ""
 
-quantization_config = BitsAndBytesConfig()
+load_dotenv()
+openai_api_key = os.getenv('OPENAI_API_KEY')
 
 def load_embedding_model():
     print("Loading Embeddings Model..")
-    return HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-large", model_kwargs={"device": "cuda"})
+    #return HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-large", model_kwargs={"device": "cuda"})
+    return OpenAIEmbeddings()
 
 def load_language_model():
     print("Loading Phi-2 with LoRA adapters..")
@@ -31,7 +36,6 @@ def load_language_model():
         "phi-2/",  # Make sure to use the correct model ID
         trust_remote_code=True,
         torch_dtype=torch.float16,
-        quantization_bits=quantization_config,
         low_cpu_mem_usage=True
     )
     model = attach_lora_adapters(model)
@@ -45,7 +49,7 @@ def run_pyats_job():
 class ChatWithRoutingTable:
     def __init__(self):
         self.embedding_model = load_embedding_model()
-        self.pyatsjob = run_pyats_job()
+        #self.pyatsjob = run_pyats_job()
         self.load_text()
         self.split_into_chunks()
         self.store_in_chroma()
@@ -68,7 +72,8 @@ class ChatWithRoutingTable:
 
     def setup_conversation_retrieval_chain(self):
         print("Setup conversation..")
-        llm = Ollama(model="phi")
+        #llm = Ollama(model="phi")
+        llm = ChatOpenAI(temperature=0, model="gpt-4-1106-preview")
         self.qa = ConversationalRetrievalChain.from_llm(llm, self.vectordb.as_retriever(search_kwargs={"k": 5}))
 
     def get_default_route_with_rag(self):
@@ -81,12 +86,19 @@ class ChatWithRoutingTable:
 
     def create_jsonl(self, data_pairs, filename='train_dataset.jsonl'):
         print("saving dataset..")
+        formatted_data_pairs = [self.formatting_func(pair) for pair in data_pairs]
         with open(filename, 'w') as file:
-            for question, answer in data_pairs:
-                file.write(json.dumps({"input": question, "output": answer}) + '\n')
+            for data in formatted_data_pairs:
+                file.write(json.dumps(data) + '\n')
 
-def formatting_func(example):
-    return f"### Question: {example['input']}\n### Answer: {example['output']}"
+    def formatting_func(self, example):
+        # Adjust this function to handle extracting the answer text from the answer dictionary
+        question = example[0]
+        answer = example[1]['answer']  # Assuming 'answer' is a key in the dictionary that contains the actual response text
+        return {
+            "input": f"### Question: {question}",
+            "output": f"### Answer: {answer}"
+        }
 
 def tokenize_and_format(batch, tokenizer):
     # Ensure all inputs and outputs are strings
@@ -142,24 +154,241 @@ fsdp_plugin = FullyShardedDataParallelPlugin(
 accelerator = Accelerator(fsdp_plugin=fsdp_plugin)
 
 if __name__ == "__main__":
-    chat_instance = ChatWithRoutingTable()
-    questions = ["What is my default route?"]
-    data_pairs = chat_instance.collect_data(questions)
-    chat_instance.create_jsonl(data_pairs)
+    # chat_instance = ChatWithRoutingTable()
+    # questions = [
+    #                 "What is the default route in the routing table?",
+    #                 "What is the next hop IP for the default route?",
+    #                 "Which interface is used for the default route?",
+    #                 "What metric is used for the default route?",
+    #                 "What is the route preference for the default route?",
+    #                 "Is the default route actively used?",
+    #                 "What is the source protocol for the default route?",
+    #                 "What is the source protocol code for the default route?",
+    #                 "What is the next hop IP for the route to 10.0.0.0/24?",
+    #                 "Which interface is used for the route to 10.0.0.0/24?",
+    #                 "Is the route to 10.0.0.0/24 actively used?",
+    #                 "What is the source protocol for the route to 10.0.0.0/24?",
+    #                 "What is the source protocol code for the route to 10.0.0.0/24?",
+    #                 "What is the next hop IP for the route to 10.0.0.1/32?",
+    #                 "Which interface is used for the route to 10.0.0.1/32?",
+    #                 "Is the route to 10.0.0.1/32 actively used?",
+    #                 "What is the source protocol for the route to 10.0.0.1/32?",
+    #                 "What is the source protocol code for the route to 10.0.0.1/32?",
+    #                 "What is the next hop IP for the route to 10.10.20.0/24?",
+    #                 "Which interface is used for the route to 10.10.20.0/24?",
+    #                 "Is the route to 10.10.20.0/24 actively used?",
+    #                 "What is the source protocol for the route to 10.10.20.0/24?",
+    #                 "What is the source protocol code for the route to 10.10.20.0/24?",
+    #                 "What is the next hop IP for the route to 10.10.20.48/32?",
+    #                 "Which interface is used for the route to 10.10.20.48/32?",
+    #                 "Is the route to 10.10.20.48/32 actively used?",
+    #                 "What is the source protocol for the route to 10.10.20.48/32?",
+    #                 "What is the source protocol code for the route to 10.10.20.48/32?",
+    #                 "What is the next hop IP for the route to 10.255.255.0/24?",
+    #                 "Which interface is used for the route to 10.255.255.0/24?",
+    #                 "Is the route to 10.255.255.0/24 actively used?",
+    #                 "What is the source protocol for the route to 10.255.255.0/24?",
+    #                 "What is the source protocol code for the route to 10.255.255.0/24?",
+    #                 "What is the next hop IP for the route to 10.255.255.9/32?",
+    #                 "Which interface is used for the route to 10.255.255.9/32?",
+    #                 "Is the route to 10.255.255.9/32 actively used?",
+    #                 "What is the source protocol for the route to 10.255.255.9/32?",
+    #                 "What is the source protocol code for the route to 10.255.255.9/32?",
+    #                 "What is the next hop IP for the route to 192.168.1.0/24?",
+    #                 "Which interface is used for the route to 192.168.1.0/24?",
+    #                 "Is the route to 192.168.1.0/24 actively used?",
+    #                 "What is the source protocol for the route to 192.168.1.0/24?",
+    #                 "What is the source protocol code for the route to 192.168.1.0/24?",
+    #                 "What is the next hop IP for the route to 192.168.1.1/32?",
+    #                 "Which interface is used for the route to 192.168.1.1/32?",
+    #                 "Is the route to 192.168.1.1/32 actively used?",
+    #                 "What is the source protocol for the route to 192.168.1.1/32?",
+    #                 "What is the source protocol code for the route to 192.168.1.1/32?",
+    #                 "How many routes are there in the default VRF?",
+    #                 "How many active routes are there in the IPv4 address family?",
+    #                 "How many static routes are there in the IPv4 address family?",
+    #                 "How many connected routes are there in the IPv4 address family?",
+    #                 "How many local routes are there in the IPv4 address family?",
+    #                 "Which routes have a metric of 0?",
+    #                 "Which routes use GigabitEthernet1 as the outgoing interface?",
+    #                 "Which routes use Loopback0 as the outgoing interface?",
+    #                 "Which routes use VirtualPortGroup0 as the outgoing interface?",
+    #                 "Which routes use Loopback109 as the outgoing interface?",
+    #                 "What are the next hop IPs for all active routes?",
+    #                 "What are the outgoing interfaces for all static routes?",
+    #                 "What are the route preferences for all connected routes?",
+    #                 "What are the source protocols for all local routes?",
+    #                 "What are the source protocol codes for all routes in the IPv4 address family?"
+    #                 "What are the active protocols used in the routing table?",
+    #                 "Which routes have a metric set to non-zero?",
+    #                 "What is the most common outgoing interface used in the routing table?",
+    #                 "What routes have Loopback interfaces as their outgoing interfaces?",
+    #                 "Are there any static routes with a next hop IP address specified?",
+    #                 "Which routes are configured with the source protocol as 'local'?",
+    #                 "Which routes are configured with the source protocol as 'static'?",
+    #                 "What are the IP addresses of all routes marked as 'local'?",
+    #                 "How many routes are configured with 'GigabitEthernet1' as their outgoing interface?",
+    #                 "What is the route preference for routes with the source protocol 'connected'?",
+    #                 "Are there any routes with the outgoing interface 'VirtualPortGroup0' that are inactive?",
+    #                 "How many routes use a Loopback interface?",
+    #                 "What routes use 'Loopback109' as their outgoing interface?",
+    #                 "How many routes have the 'connected' source protocol code?",
+    #                 "List all routes that use 'VirtualPortGroup0' as their outgoing interface.",
+    #                 "Which routes are marked as active and use 'GigabitEthernet1'?",
+    #                 "How many routes are there for each source protocol type?",
+    #                 "What are the common characteristics of routes with 'Loopback0' as their outgoing interface?",
+    #                 "What is the number of routes marked with the source protocol code 'L'?",
+    #                 "What interfaces are used by more than one route?",
+    #                 "Are there routes with overlapping IP ranges?",
+    #                 "What is the total number of routes configured under the default VRF?",
+    #                 "How are the routes distributed among different source protocols?",
+    #                 "Which static routes also have a next hop IP address specified?",
+    #                 "What are the IP addresses for all routes marked as 'connected'?",
+    #                 "Can you list the routes with the highest route preference values?",
+    #                 "What is the diversity of outgoing interfaces across all routes?",
+    #                 "Which routes have the longest subnet masks?",
+    #                 "What routes have the shortest subnet masks?",
+    #                 "How many routes are directly connected to a network?",
+    #                 "What is the IP address range covered by static routes?",
+    #                 "How many routes are there with the outgoing interface as 'GigabitEthernet1' and active status?",
+    #                 "What is the distribution of next hop IP addresses in the routing table?",
+    #                 "Which routes specify an outgoing interface but no next hop IP?",
+    #                 "What are the unique source protocol codes used in the routing table?",
+    #                 "How many routes are there with each unique source protocol code?",
+    #                 "Which routes are not marked as active?",
+    #                 "What are the next hop IP addresses for routes marked with source protocol 'connected'?",
+    #                 "What routes have a route preference of 1?",
+    #                 "What are the next hop IPs for routes with a route preference higher than 1?",
+    #                 "What is the range of route preferences used across all routes?",
+    #                 "How many routes have a next hop IP address within the '10.10.20.0/24' subnet?",
+    #                 "What is the average metric value across all static routes?",
+    #                 "Which routes have undefined or null outgoing interfaces?",
+    #                 "Are there any inconsistencies in the route preferences across similar routes?",
+    #                 "How many routes have a source protocol code that is not 'C', 'S*', or 'L'?",
+    #                 "What are the details of the most recently added route?",
+    #                 "Are there any deprecated interfaces still listed in the routing table?",
+    #                 "How many routes have been configured with redundancy via multiple next hops?",
+    #                 "What are the common next hop IPs used for routes with Loopback interfaces?",
+    #                 "Which routes can be considered critical based on their active status and source protocol?",
+    #                 "How many routes use a metric higher than 1?",
+    #                 "What is the route preference for the default IPv4 route?",
+    #                 "How many routes have a next-hop IP address assigned?",
+    #                 "Are there any routes with no outgoing interfaces specified?",
+    #                 "What is the source protocol code for the 192.168.1.1/32 route?",
+    #                 "Which routes have a source protocol code 'S*' and what does it signify?",
+    #                 "How many routes use the source protocol 'static' and are also active?",
+    #                 "What are the characteristics of routes with a route preference of 1?",
+    #                 "What is the longest subnet mask used in the routing table?",
+    #                 "What is the shortest subnet mask used in the routing table?",
+    #                 "How many routes use the outgoing interface 'GigabitEthernet1' with a source protocol 'connected'?",
+    #                 "What are the IP addresses for routes that are directly connected networks?",
+    #                 "Which routes have the same next hop IP address?",
+    #                 "What are the total number of interfaces used by all routes in the routing table?",
+    #                 "How many routes have a source protocol 'local' and are also active?",
+    #                 "What are the different source protocol codes used in the routing table?",
+    #                 "Are there routes configured without a next hop IP address?",
+    #                 "What is the total number of routes that use a loopback interface as the outgoing interface?",
+    #                 "Which routes use an outgoing interface but have no active status?",
+    #                 "How many routes are marked with the source protocol 'connected' and have a specified outgoing interface?",
+    #                 "What is the average route preference value across all routes?",
+    #                 "Which routes use a specific next hop IP within the '10.0.0.0/24' subnet?",
+    #                 "How many routes have a metric of zero and are not the default route?",
+    #                 "Which routes have overlapping next hop IP addresses?",
+    #                 "How many routes are there with the outgoing interface as 'Loopback0' and are inactive?",
+    #                 "What is the percentage of active routes in the routing table?",
+    #                 "What is the next hop IP for routes that have a metric of zero?",
+    #                 "What are the IP addresses of all active routes with the source protocol 'static'?",
+    #                 "What are the outgoing interfaces for all routes with a source protocol 'local'?",
+    #                 "Which routes have a route preference of 0 and why?",
+    #                 "What is the maximum metric used across all routes?",
+    #                 "How many routes are configured under VRF named 'default'?",
+    #                 "Are there any routes with duplicated configurations?",
+    #                 "Which routes have the source protocol 'connected' but no active next hop?",
+    #                 "What are the subnet masks for all routes using 'Loopback109' as the outgoing interface?",
+    #                 "Which routes are configured with a source protocol 'static' but do not specify a next hop?",
+    #                 "How many routes are there with each type of outgoing interface?",
+    #                 "Are there routes that specify 'Loopback0' as their outgoing interface but have a next hop IP?",
+    #                 "What is the range of metrics used for routes with source protocol 'connected'?",
+    #                 "Which routes are configured to be always active?",
+    #                 "What are the details of routes that use 'VirtualPortGroup0' as their outgoing interface and are inactive?",
+    #                 "How many routes are there without any source protocol code specified?",
+    #                 "Are there any routes with a source protocol 'local' that specify a next hop IP?",
+    #                 "What are the different types of source protocols used across all routes and how many are there of each type?",
+    #                 "Which routes are marked as critical based on their configurations?",
+    #                 "How many routes are configured with a source protocol 'connected' and a route preference higher than 1?",
+    #                 "Which routes have no active status but have a specified outgoing interface?",
+    #                 "What are the most frequently used outgoing interfaces in the routing table?",
+    #                 "Which routes have a source protocol code that does not match their actual configurations?",
+    #                 "What are the source protocols for routes with a route preference less than the average?",
+    #                 "Are there any routes that are deprecated but still listed?",
+    #                 "Which routes have undergone the most recent changes?"
+    #                 "What are the security levels assigned to routes using 'GigabitEthernet1'?",
+    #                 "Which routes are configured with priority over others and why?",
+    #                 "Are there any routes linked to specific network policies?",
+    #                 "What are the compliance requirements for the routes within the '10.0.0.0/24' subnet?",
+    #                 "How many routes are tagged with specific administrative tags?",
+    #                 "What routing protocols are implemented across different interfaces?",
+    #                 "Which routes are affected by routing policies?",
+    #                 "Are there backup routes for critical network paths?",
+    #                 "How many routes are designed for load balancing?",
+    #                 "What is the redundancy configuration for routes using 'Loopback0'?",
+    #                 "How are routing updates managed for the '192.168.1.0/24' subnet?",
+    #                 "What disaster recovery protocols are associated with active routes?",
+    #                 "Which routes integrate with external routing frameworks?",
+    #                 "How many routes have customized traffic engineering tags?",
+    #                 "What is the error rate reported on routes using 'VirtualPortGroup0'?",
+    #                 "Are there any encrypted routes and what protocols are used?",
+    #                 "What is the average packet loss on routes with a source protocol of 'connected'?",
+    #                 "Which routes have automation scripts configured and what are their purposes?",
+    #                 "How many routes are part of a segregated network segment?",
+    #                 "What are the maintenance windows for critical routes?",
+    #                 "Which routes have configurable alerts set for performance degradation?",
+    #                 "Are there any routes that require manual intervention for changes?",
+    #                 "What is the failover time for the default route?",
+    #                 "How is traffic prioritized in routes with high data flow?",
+    #                 "What monitoring tools are integrated with the routing table?",
+    #                 "Are there any routes that are deprecated but still operational?",
+    #                 "How many routes are part of the QoS (Quality of Service) framework?",
+    #                 "What are the latency benchmarks for routes in the '10.255.255.0/24' subnet?",
+    #                 "Which routes have had recent security audits?",
+    #                 "How many routes are exposed to public access?",
+    #                 "Which routes support multicast traffic?",
+    #                 "What are the bandwidth limitations for the '10.10.20.0/24' route?",
+    #                 "Are there specific routes designated for VOIP traffic?",
+    #                 "What are the backup strategies for routes with a source protocol 'static'?",
+    #                 "How are route conflicts resolved in the current network configuration?",
+    #                 "Which routes are optimized for cloud connectivity?",
+    #                 "What cybersecurity measures are implemented on routes handling sensitive data?",
+    #                 "How many routes are configured with dynamic routing protocols?",
+    #                 "What are the VLAN configurations for routes using 'VirtualPortGroup0'?",
+    #                 "Are there any routes that bypass standard network security checks?",
+    #                 "How is network segmentation enforced through routing policies?",
+    #                 "What is the impact of a single point of failure in the routing table?",
+    #                 "Which routes are prioritized in network congestion scenarios?",
+    #                 "How many routes are designed to handle peak traffic loads?",
+    #                 "What are the disaster recovery plans for routes marked as 'critical'?",
+    #                 "Are there any routes that use legacy protocols?",
+    #                 "What is the data integrity protocol for routes transferring confidential information?",
+    #                 "How many routes have detailed logging enabled for auditing purposes?",
+    #                 "Which routes have network health indicators integrated?",
+    #                 "How is network performance measured across different routes?"                    
+    #             ]
+    # data_pairs = chat_instance.collect_data(questions)
+    # chat_instance.create_jsonl(data_pairs)
 
-    # Load tokenizer and model
     tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-2")
     if tokenizer.pad_token is None:
         tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    tokenizer.save_pretrained('./phi2-journal-finetune-2024-04-23-11-17')
 
     model = load_language_model()
-
-    # Resize model embeddings to account for potential new tokens
     model.resize_token_embeddings(len(tokenizer))
 
     # Load and prepare dataset
     train_dataset = load_dataset('json', data_files='train_dataset.jsonl', split='train')
-    print(train_dataset)  # Check dataset structure
+    print(train_dataset)  # Check initial dataset structure
+
+    # Now tokenize the dataset
     tokenized_train_dataset = train_dataset.map(
         lambda batch: tokenize_and_format(batch, tokenizer),
         batched=True,
@@ -187,9 +416,9 @@ if __name__ == "__main__":
         logging_dir="./logs",
         save_strategy="steps",
         save_steps=25,
-        evaluation_strategy="steps",
+        evaluation_strategy="no",
         eval_steps=25,
-        do_eval=True,
+        do_eval=False,
         report_to="wandb",
         run_name=run_name
     )
@@ -203,3 +432,10 @@ if __name__ == "__main__":
 
     print("Training model...")
     trainer.train()
+
+    # Save the model and the tokenizer
+    print("saving model...")
+    model.save_pretrained(f"./{run_name}")
+
+    print("saving tokenizer...")
+    tokenizer.save_pretrained(f"./{run_name}")    
