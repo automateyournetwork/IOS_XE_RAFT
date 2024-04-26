@@ -30,10 +30,6 @@ try:
 except Exception as e:
     print(f"Failed to load model: {str(e)}")
 
-# Check sizes after loading
-print("Tokenizer vocab size after loading:", len(tokenizer))
-print("Model embedding size after loading:", model.get_input_embeddings().num_embeddings)
-
 # Apply LoRA adapters and print the post-load embedding size
 model = attach_lora_adapters(model)
 print("Post-load model embedding size:", model.get_input_embeddings().num_embeddings)
