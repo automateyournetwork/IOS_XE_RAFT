@@ -1,5 +1,24 @@
 import torch
+from peft import LoraConfig, get_peft_model
 from transformers import AutoTokenizer, AutoModelForCausalLM
+
+def attach_lora_adapters(model):
+    # Configuring LoRA
+    config = LoraConfig(
+        r=32,
+        lora_alpha=64,
+        target_modules=[
+            "Wqkv",
+            "fc1",
+            "fc2",
+        ],
+        bias="none",
+        lora_dropout=0.05,  # Conventional
+        task_type="CAUSAL_LM",
+    )
+    # Applying LoRA to the model
+    model = get_peft_model(model, config)
+    return model
 
 # Define the path to the model directory
 model_dir = "./phi2-routing-table"
@@ -7,6 +26,11 @@ model_dir = "./phi2-routing-table"
 # Load tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained(model_dir)
 model = AutoModelForCausalLM.from_pretrained(model_dir)
+model = attach_lora_adapters(model)  # Re-apply any specific model configurations like LoRA
+
+# Confirm sizes again post-load
+print("Post-load:")
+print("Model embedding size:", model.get_input_embeddings().num_embeddings)
 
 # Ensure the model is using GPU if available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
