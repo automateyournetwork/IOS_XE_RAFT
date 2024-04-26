@@ -448,27 +448,34 @@ if __name__ == "__main__":
         # Initialize empty lists to hold concatenated sequences of input and output
         inputs = []
         outputs = []
-        
+
         # Loop through each record in the batch
         for record in batch:
             # Extract and concatenate messages based on role to form the input context
             input_text = " ".join([message['content'] for message in record['messages'] if message['role'] != 'assistant'])
             # Extract the assistant's message to use as the output target
             output_text = " ".join([message['content'] for message in record['messages'] if message['role'] == 'assistant'])
-            
+
             inputs.append(input_text)
             outputs.append(output_text)
-    
+
         # Tokenizing inputs and outputs
         model_inputs = tokenizer(inputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
         model_outputs = tokenizer(outputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
-    
+
         # Return a dictionary matching the expected structure for model training
         return {
             "input_ids": model_inputs['input_ids'],
             "attention_mask": model_inputs['attention_mask'],
             "labels": model_outputs['input_ids']  # Ensure labels are set for outputs only
         }
+
+    # Tokenize the dataset
+    tokenized_train_dataset = train_dataset.map(
+        tokenize_and_format,
+        batched=True,
+        num_proc=1  # Adjust based on your available CPU cores
+    )
 
     # Setup Accelerator for distributed training
     accelerator = Accelerator()
