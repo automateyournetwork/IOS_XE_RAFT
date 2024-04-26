@@ -16,8 +16,20 @@ def attach_lora_adapters(model):
 
 # Load the model and tokenizer from a predefined directory
 model_dir = "./phi2-routing-table"
-tokenizer = AutoTokenizer.from_pretrained(model_dir)
-model = AutoModelForCausalLM.from_pretrained(model_dir)
+try:
+    tokenizer = AutoTokenizer.from_pretrained(model_dir)
+    print("Tokenizer loaded successfully.")
+except Exception as e:
+    print("Failed to load tokenizer:", e)
+    raise
+
+try:
+    model = AutoModelForCausalLM.from_pretrained(model_dir)
+    print("Model loaded successfully.")
+    print("Embedding size after loading:", model.get_input_embeddings().num_embeddings)
+except Exception as e:
+    print("Failed to load model:", e)
+    raise
 
 # Apply LoRA adapters and print the post-load embedding size
 model = attach_lora_adapters(model)
