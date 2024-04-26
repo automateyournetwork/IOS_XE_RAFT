@@ -2,6 +2,10 @@ import torch
 from peft import LoraConfig, get_peft_model, PeftModel  # Ensure these are correctly imported from your module
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
+def load_base_model():
+    # Load a pre-trained model or initialize it
+    return AutoModelForCausalLM.from_pretrained("Microsoft/phi-2", local_files_only=True)
+
 def attach_lora_adapters(model):
     """Apply LoRA adapters to the model with specified configuration."""
     config = LoraConfig(
@@ -22,6 +26,15 @@ if tokenizer.pad_token is None:
     tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     # Ensure you save the tokenizer if you modify it
     tokenizer.save_pretrained(model_dir)
+
+# Load the base model
+base_model = load_base_model()
+
+# Attach LoRA adapters
+model_with_lora = attach_lora_adapters(base_model)
+
+# Assuming you need to save the modified model with LoRA adapters
+model_with_lora.save_pretrained(model_dir)  # Save the adapted model
 
 # Attempt to load the model
 try:
