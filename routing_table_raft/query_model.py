@@ -4,7 +4,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 def load_base_model():
     # Load a pre-trained model or initialize it
-    return AutoModelForCausalLM.from_pretrained("Microsoft/phi-2", local_files_only=True)
+    return AutoModelForCausalLM.from_pretrained("microsoft/phi-2", local_files_only=True)
 
 def attach_lora_adapters(model):
     """Apply LoRA adapters to the model with specified configuration."""
