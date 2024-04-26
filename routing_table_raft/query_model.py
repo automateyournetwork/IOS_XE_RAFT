@@ -14,7 +14,7 @@ def generate_answer(model, tokenizer, question, max_length=128, num_beams=5):
     inputs = {key: value.to(model.device) for key, value in inputs.items()}
     output = model.generate(
         **inputs, 
-        max_length=50, 
+        max_new_tokens=512, 
         num_beams=num_beams, 
         no_repeat_ngram_size=2,
         temperature=0.5,  # Lower temperature to reduce randomness
