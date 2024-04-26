@@ -34,7 +34,7 @@ base_model = load_base_model()
 model_with_lora = attach_lora_adapters(base_model)
 
 # Assuming you need to save the modified model with LoRA adapters
-model_with_lora.save_pretrained(model_dir)  # Save the adapted model
+model_with_lora.save_pretrained(model_id=model_dir)  # Save the adapted model
 
 # Attempt to load the model
 try:
