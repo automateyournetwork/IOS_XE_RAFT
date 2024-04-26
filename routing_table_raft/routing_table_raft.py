@@ -2,6 +2,7 @@ import os
 import json
 import wandb
 import torch
+import logging
 from datetime import datetime
 from datasets import load_dataset
 from peft import LoraConfig, get_peft_model
@@ -17,6 +18,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingA
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
 
 # Initialize wandb
 wandb.login()
@@ -415,49 +418,45 @@ if __name__ == "__main__":
     #             ]
     # data_pairs = chat_instance.collect_data(questions)
     # chat_instance.create_jsonl(data_pairs)
+    # Initialize model and tokenizer
+    model = load_language_model()
     base_model_name = "phi2"
     run_name = f"{base_model_name}-routing-table"
-    
-
     tokenizer = AutoTokenizer.from_pretrained("Microsoft/phi-2")
+    
+    # Add a pad token if it does not exist
     if tokenizer.pad_token is None:
         tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-   
-    model = load_language_model()
-    model.resize_token_embeddings(len(tokenizer))
-    print("Tokenizer vocab size (after resize):", len(tokenizer))
-    print("Model embedding size (after resize):", model.get_input_embeddings().num_embeddings)
-
-    print("saving tokenizer...")
-    tokenizer.save_pretrained(f"./{run_name}")
-
-    # Save the model and the tokenizer
-    print("saving model...")
-    model.save_pretrained(f"./{run_name}")
-    print("Model embedding size (after load):", model.get_input_embeddings().num_embeddings)
+        model.resize_token_embeddings(len(tokenizer))
     
-    # Ensure tokenizer and model vocab sizes are aligned
+    # Save the tokenizer and model immediately after adjustments
+    tokenizer.save_pretrained(f"./{run_name}")
+    model.save_pretrained(f"./{run_name}")
+    
+    # Display the tokenizer and model sizes to confirm correct setup
     print("Tokenizer vocab size:", len(tokenizer))
     print("Model embedding size:", model.get_input_embeddings().num_embeddings)
-    if len(tokenizer) != model.get_input_embeddings().num_embeddings:
-        model.resize_token_embeddings(len(tokenizer))
-        print("Adjusted model embeddings to match tokenizer vocab size.")    
-
+    
     # Load and prepare dataset
     train_dataset = load_dataset('json', data_files='train_dataset.jsonl', split='train')
     print(train_dataset)  # Check initial dataset structure
-
-    # Now tokenize the dataset
+    
+    # Function to tokenize and format the batch for training
+    def tokenize_and_format(batch):
+        return tokenizer(batch['input'], padding="max_length", truncation=True, max_length=512)
+    
+    # Tokenize the dataset
     tokenized_train_dataset = train_dataset.map(
-        lambda batch: tokenize_and_format(batch, tokenizer),
+        tokenize_and_format,
         batched=True,
         num_proc=1  # Adjust based on your available CPU cores
     )
-
-    # Setup Accelerator
+    
+    # Setup Accelerator for distributed training
     accelerator = Accelerator()
-    model = accelerator.prepare(model)
-
+    model, tokenizer = accelerator.prepare(model, tokenizer)
+    
+    # Configure training arguments
     training_args = TrainingArguments(
         output_dir=f"./{run_name}",
         warmup_steps=1,
@@ -476,13 +475,15 @@ if __name__ == "__main__":
         report_to="wandb",
         run_name=run_name
     )
-
+    
+    # Initialize the Trainer
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_train_dataset,
         data_collator=DataCollatorForLanguageModeling(tokenizer, mlm=False)
     )
-
+    
+    # Start training
     print("Training model...")
     trainer.train()
