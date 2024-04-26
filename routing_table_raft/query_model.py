@@ -20,8 +20,15 @@ model = get_peft_model(base_model, LoraConfig(
 
 # Ensure model is on the correct device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 model.to(device).eval()
 
+with torch.no_grad():  # Ensure no gradients are being calculated
+    inputs = tokenizer("Your question here", return_tensors="pt")
+    outputs = model.generate(**inputs)
+    answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    print(answer)
+    
 def ask_model(question, model, tokenizer, device, max_length=512, num_beams=5):
     """Generate answers using the fine-tuned model."""
     inputs = tokenizer.encode_plus(
