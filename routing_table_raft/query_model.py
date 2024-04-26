@@ -1,5 +1,5 @@
 import torch
-from peft import LoraConfig, get_peft_model  # Ensure these are correctly imported from your module
+from peft import LoraConfig, get_peft_model, PeftModel  # Ensure these are correctly imported from your module
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 def attach_lora_adapters(model):
@@ -25,7 +25,7 @@ if tokenizer.pad_token is None:
 
 # Attempt to load the model
 try:
-    model = AutoModelForCausalLM.from_pretrained(model_dir)
+    model = PeftModel.from_pretrained(model_dir)
     print("Model loaded successfully.")
 except Exception as e:
     print(f"Failed to load model: {str(e)}")
