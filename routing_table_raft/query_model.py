@@ -2,7 +2,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # Define the path to the model directory
-model_dir = "./phi2-journal-finetune-2024-04-24-12-09"
+model_dir = "./phi2-routing-table"
 
 # Load tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained(model_dir)

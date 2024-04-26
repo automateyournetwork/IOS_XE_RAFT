@@ -33,7 +33,7 @@ def load_embedding_model():
 def load_language_model():
     print("Loading Phi-2 with LoRA adapters..")
     model = AutoModelForCausalLM.from_pretrained(
-        "phi-2/",  # Make sure to use the correct model ID
+        "microsoft/phi-2",  # Make sure to use the correct model ID
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
@@ -375,14 +375,30 @@ if __name__ == "__main__":
     #             ]
     # data_pairs = chat_instance.collect_data(questions)
     # chat_instance.create_jsonl(data_pairs)
+    base_model_name = "phi2"
+    run_name = f"{base_model_name}-routing-table"
+    
 
-    tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-2")
+    tokenizer = AutoTokenizer.from_pretrained("Microsoft/phi-2")
     if tokenizer.pad_token is None:
         tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-    tokenizer.save_pretrained('./phi2-journal-finetune-2024-04-23-11-17')
-
+   
     model = load_language_model()
     model.resize_token_embeddings(len(tokenizer))
+
+    print("saving tokenizer...")
+    tokenizer.save_pretrained(f"./{run_name}")
+
+    # Save the model and the tokenizer
+    print("saving model...")
+    model.save_pretrained(f"./{run_name}")
+
+    # Ensure tokenizer and model vocab sizes are aligned
+    print("Tokenizer vocab size:", len(tokenizer))
+    print("Model embedding size:", model.get_input_embeddings().num_embeddings)
+    if len(tokenizer) != model.get_input_embeddings().num_embeddings:
+        model.resize_token_embeddings(len(tokenizer))
+        print("Adjusted model embeddings to match tokenizer vocab size.")    
 
     # Load and prepare dataset
     train_dataset = load_dataset('json', data_files='train_dataset.jsonl', split='train')
@@ -398,11 +414,6 @@ if __name__ == "__main__":
     # Setup Accelerator
     accelerator = Accelerator()
     model = accelerator.prepare(model)
-
-    # Configure and start training
-    project = "journal-finetune"
-    base_model_name = "phi2"
-    run_name = f"{base_model_name}-{project}-{datetime.now().strftime('%Y-%m-%d-%H-%M')}"
 
     training_args = TrainingArguments(
         output_dir=f"./{run_name}",
@@ -432,10 +443,3 @@ if __name__ == "__main__":
 
     print("Training model...")
     trainer.train()
-
-    # Save the model and the tokenizer
-    print("saving model...")
-    model.save_pretrained(f"./{run_name}")
-
-    print("saving tokenizer...")
-    tokenizer.save_pretrained(f"./{run_name}")    
