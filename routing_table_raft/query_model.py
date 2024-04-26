@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel, LoraConfig, get_peft_model  # Assuming these are defined as needed
 
 model_dir = "./phi2-routing-table"  # Ensure this is the directory where your fine-tuned model is saved
