@@ -38,7 +38,7 @@ model_with_lora.save_pretrained(model_dir)  # Save the adapted model
 
 # Attempt to load the model
 try:
-    model = PeftModel.from_pretrained(model_id=model_dir)
+    model = PeftModel.from_pretrained(model=model_dir, model_id=model_dir)
     print("Model loaded successfully.")
 except Exception as e:
     print(f"Failed to load model: {str(e)}")
