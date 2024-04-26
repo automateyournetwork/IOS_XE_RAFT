@@ -445,34 +445,34 @@ if __name__ == "__main__":
     print(train_dataset)  # Check initial dataset structure
 
     def tokenize_and_format(batch):
-        # Ensure all inputs and outputs are strings
+        # Debug: Print out the first batch to see its structure
+        print("Batch type:", type(batch))
+        print("Batch content example:", batch[:1])  # Print the first element to inspect
+    
         inputs = []
         outputs = []
     
-        # Loop through each example in the batch
         for example in batch:
-            messages = example['messages']  # Ensure this key aligns with how data is structured
-            # Check if the 'messages' is a list of dictionaries
-            if isinstance(messages, list) and all(isinstance(message, dict) for message in messages):
-                input_text = " ".join([message['content'] for message in messages if message['role'] != 'assistant'])
-                output_text = " ".join([message['content'] for message in messages if message['role'] == 'assistant'])
+            # Ensure 'messages' key exists and is the expected format
+            if 'messages' in example and isinstance(example['messages'], list):
+                messages = example['messages']
+                input_text = " ".join(message['content'] for message in messages if message['role'] != 'assistant')
+                output_text = " ".join(message['content'] for message in messages if message['role'] == 'assistant')
+                inputs.append(input_text)
+                outputs.append(output_text)
             else:
-                raise ValueError("Data structure not as expected - ensure 'messages' are list of dicts")
+                print("Error with data structure:", example)  # Print problematic data
+                continue  # Skip this entry
             
-            inputs.append(input_text)
-            outputs.append(output_text)
-    
-        # Tokenizing inputs and outputs
         model_inputs = tokenizer(inputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
         model_outputs = tokenizer(outputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
     
-        # Return a dictionary matching the expected structure
         return {
             "input_ids": model_inputs['input_ids'],
             "attention_mask": model_inputs['attention_mask'],
-            "labels": model_outputs['input_ids']  # Ensure labels are set for outputs only
+            "labels": model_outputs['input_ids']
         }
-    
+
     # Usage of the function in dataset mapping should include error handling
     try:
         tokenized_train_dataset = train_dataset.map(
