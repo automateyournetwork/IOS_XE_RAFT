@@ -427,10 +427,14 @@ if __name__ == "__main__":
     run_name = f"{base_model_name}-routing-table"
     tokenizer = AutoTokenizer.from_pretrained("Microsoft/phi-2")
 
+    print("Tokenizer vocab size before:", len(tokenizer))
     # Add a pad token if it does not exist
     if tokenizer.pad_token is None:
         tokenizer.add_special_tokens({'pad_token': '[PAD]'})
         model.resize_token_embeddings(len(tokenizer))
+        print("Adjusted Model embedding size:", model.get_input_embeddings().num_embeddings)
+
+    print("Tokenizer vocab size after:", len(tokenizer))
 
     # Save the tokenizer and model immediately after adjustments
     tokenizer.save_pretrained(f"./{run_name}")
@@ -510,5 +514,7 @@ if __name__ == "__main__":
     )
 
     # Start training
+    assert len(tokenizer) == model.get_input_embeddings().num_embeddings, "Mismatch in tokenizer and model embeddings count"
+    
     print("Training model...")
     trainer.train()

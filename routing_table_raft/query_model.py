@@ -29,14 +29,16 @@ def main():
     # Define the directory where your fine-tuned model is saved
     model_dir = "./phi2-routing-table"
     model, tokenizer = load_model(model_dir)
+    
+    # Print tokenizer and model embedding sizes to check alignment
+    print("Tokenizer vocab size:", len(tokenizer))
+    print("Model embedding size:", model.get_input_embeddings().num_embeddings)
 
     # Example questions to test the model
     questions = [
-        "What can you tell me about my routing table?",
         "What is my default route?",
         "What is the next hop for my default route?",
         "What interface does my default route use?"
-        "A default route is represented as 0.0.0.0/0 - could you tell me what my default route is and what the next hop and outgoing interface is please? Do not be verbose."
     ]
 
     # Run the model on the example questions
