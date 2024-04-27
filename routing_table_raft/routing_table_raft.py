@@ -444,41 +444,35 @@ if __name__ == "__main__":
     train_dataset = load_dataset('json', data_files='train_dataset.jsonl', split='train')
     print(train_dataset)  # Check initial dataset structure
 
-    def tokenize_and_format(batch):
-        # Debug: Print out the first batch to see its structure
-        print("Batch type:", type(batch))
-        print("Batch content example:", batch[:1])  # Print the first element to inspect
-    
+    def tokenize_and_format(examples):
+        # This assumes 'examples' is a batch from 'train_dataset'
         inputs = []
         outputs = []
-    
-        for example in batch:
-            # Ensure 'messages' key exists and is the expected format
-            if 'messages' in example and isinstance(example['messages'], list):
-                messages = example['messages']
-                input_text = " ".join(message['content'] for message in messages if message['role'] != 'assistant')
-                output_text = " ".join(message['content'] for message in messages if message['role'] == 'assistant')
-                inputs.append(input_text)
-                outputs.append(output_text)
-            else:
-                print("Error with data structure:", example)  # Print problematic data
-                continue  # Skip this entry
-            
+
+        # Iterate through each example in the provided batch
+        for example in examples['messages']:
+            # Filter and concatenate messages based on their roles
+            input_text = " ".join(msg['content'] for msg in example if msg['role'] != 'assistant')
+            output_text = " ".join(msg['content'] for msg in example if msg['role'] == 'assistant')
+            inputs.append(input_text)
+            outputs.append(output_text)
+
+        # Tokenize inputs and outputs
         model_inputs = tokenizer(inputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
         model_outputs = tokenizer(outputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
-    
+
+        # Return a properly structured dictionary
         return {
-            "input_ids": model_inputs['input_ids'],
-            "attention_mask": model_inputs['attention_mask'],
-            "labels": model_outputs['input_ids']
+            "input_ids": model_inputs.input_ids,
+            "attention_mask": model_inputs.attention_mask,
+            "labels": model_outputs.input_ids  # Labels are typically aligned with outputs
         }
 
     # Usage of the function in dataset mapping should include error handling
     try:
         tokenized_train_dataset = train_dataset.map(
             tokenize_and_format,
-            batched=True,
-            num_proc=1  # Adjust based on your available CPU cores
+            batched=True
         )
     except Exception as e:
         print(f"An error occurred during tokenization/formatting: {str(e)}")
