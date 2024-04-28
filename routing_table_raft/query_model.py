@@ -1,35 +1,40 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from peft import PeftModel  # Ensure PEFT is correctly imported
 
 def main():
-    # Define the directory where your fine-tuned model is saved
     model_dir = "./phi2-routing-table"
+    base_model = "microsoft/phi-2"  # Base model for reference if needed
 
-    # Load the tokenizer
+    # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
-    # Load the model
+    # Load the base model
     try:
-        model = AutoModelForCausalLM.from_pretrained(model_dir)
-        print("Model loaded successfully.")
+        model = AutoModelForCausalLM.from_pretrained(base_model, local_files_only=True)
+        print("Base model loaded successfully.")
     except Exception as e:
-        print(f"Error loading model: {e}")
-        return  # If the model fails to load, exit the function
+        print(f"Failed to load base model: {e}")
+        return
 
-    # Check if tokenizer and model's vocab size match
+    # Resize token embeddings if necessary
     if len(tokenizer) != model.config.vocab_size:
         print("Resizing token embeddings to match tokenizer's vocabulary size.")
         model.resize_token_embeddings(len(tokenizer))
 
-    # Save the tokenizer and model again after resizing token embeddings
+    # Apply PEFT or load a PEFT model
+    try:
+        model = PeftModel.from_pretrained(model, model_dir)  # Adjust as necessary
+        print("PEFT model loaded successfully.")
+    except Exception as e:
+        print(f"Failed to load PEFT model: {e}")
+        return
+
+    # Save the adjusted model and tokenizer
     tokenizer.save_pretrained(model_dir)
     model.save_pretrained(model_dir)
 
-    # Set the model to evaluation mode and move it to the appropriate device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device).eval()
-
-    # Run the model on example questions
+    # Example inference to check the model
     questions = [
         "What can you tell me about my routing table?",
         "What is my default route?",
@@ -38,29 +43,26 @@ def main():
     ]
 
     for question in questions:
-        answer = ask_model(question, model, tokenizer, device)
+        answer = ask_model(question, model, tokenizer)
         print(f"Question: {question}\nAnswer: {answer}\n")
 
-def ask_model(question, model, tokenizer, device, max_length=512, num_beams=5):
+def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
     """Generate answers using the fine-tuned model."""
-    inputs = tokenizer.encode_plus(
-        question, return_tensors="pt", add_special_tokens=True,
-        max_length=max_length, padding="max_length", truncation=True,
-        return_attention_mask=True
-    )
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device).eval()
 
-    # Move input tensors to the correct device
+    inputs = tokenizer(question, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
     inputs = {k: v.to(device) for k, v in inputs.items()}
-
+    
     with torch.no_grad():
         outputs = model.generate(
             input_ids=inputs['input_ids'],
             attention_mask=inputs['attention_mask'],
-            max_length=max_length,  # Set the maximum length for generated tokens
-            num_beams=num_beams,  # Set the number of beams for beam search
-            early_stopping=True  # Enable early stopping
+            max_length=max_length,
+            num_beams=num_beams,
+            early_stopping=True
         )
-
+    
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return answer
 
