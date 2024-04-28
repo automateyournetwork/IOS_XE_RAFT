@@ -13,7 +13,7 @@ def main():
     transformers.hf_hub_url.hf_hub_url.set_access_token(api_token)
     
     model_dir = "./llama3-routing-table"
-    base_model = "meta-llama/Meta-Llama-3-8B"  # Base model for reference if needed
+    base_model = "mistralai/Mistral-7B-Instruct-v0.2"  # Base model for reference if needed
 
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_dir)

@@ -37,7 +37,7 @@ def load_embedding_model():
 def load_language_model():
     print("Loading llama3 with LoRA adapters..")
     model = AutoModelForCausalLM.from_pretrained(
-        "meta-llama/Meta-Llama-3-8B",  # Make sure to use the correct model ID
+        "mistralai/Mistral-7B-Instruct-v0.2",  # Make sure to use the correct model ID
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
