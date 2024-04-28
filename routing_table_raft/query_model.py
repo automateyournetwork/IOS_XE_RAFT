@@ -2,22 +2,25 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 def load_model(model_dir):
-    """Load the tokenizer and model from the specified directory and resize embeddings if necessary."""
     print("Loading model from:", model_dir)
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
     
-    # Load the model
-    model = AutoModelForCausalLM.from_pretrained(model_dir, config={'vocab_size':50296})
+    # If you know the correct config settings, you can create a config object manually
+    config = AutoConfig.from_pretrained(model_dir, vocab_size=50296)
     
-    # Immediately check if token embeddings need resizing
-    if len(tokenizer) != model.get_input_embeddings().num_embeddings:
+    # Load the model with the manually created config
+    model = AutoModelForCausalLM.from_pretrained(model_dir, config=config)
+    
+    # Check and resize model embeddings if necessary
+    if tokenizer.vocab_size != model.config.vocab_size:
         print("Resizing model embeddings to match tokenizer vocab size.")
-        model.resize_token_embeddings(len(tokenizer))
+        model.resize_token_embeddings(tokenizer.vocab_size)
     
-    print("Loaded tokenizer vocab size:", len(tokenizer))
-    print("Loaded model embedding size:", model.get_input_embeddings().num_embeddings)    
-    model.eval()  # Set the model to evaluation mode
-    model.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))  # Move model to the appropriate device
+    print("Loaded tokenizer vocab size:", tokenizer.vocab_size)
+    print("Loaded model vocab size from config:", model.config.vocab_size)
+    print("Loaded model embedding size:", model.get_input_embeddings().num_embeddings)
+    model.eval()
+    model.to("cuda" if torch.cuda.is_available() else "cpu")
     return model, tokenizer
 
 def main():
