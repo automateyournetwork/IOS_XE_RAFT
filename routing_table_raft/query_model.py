@@ -7,7 +7,7 @@ def load_model(model_dir):
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
     
     # Load the model
-    model = AutoModelForCausalLM.from_pretrained(model_dir, config={'vocab_size':50296}))
+    model = AutoModelForCausalLM.from_pretrained(model_dir, config={'vocab_size':50296})
     
     # Immediately check if token embeddings need resizing
     if len(tokenizer) != model.get_input_embeddings().num_embeddings:
