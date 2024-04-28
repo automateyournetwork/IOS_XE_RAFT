@@ -3,8 +3,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel  # Ensure PEFT is correctly imported
 
 def main():
-    model_dir = "./phi2-routing-table"
-    base_model = "microsoft/phi-2"  # Base model for reference if needed
+    model_dir = "./llama3-routing-table"
+    base_model = "meta-llama/Meta-Llama-3-8B"  # Base model for reference if needed
 
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_dir)

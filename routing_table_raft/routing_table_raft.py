@@ -34,9 +34,9 @@ def load_embedding_model():
     return OpenAIEmbeddings()
 
 def load_language_model():
-    print("Loading Phi-2 with LoRA adapters..")
+    print("Loading llama3 with LoRA adapters..")
     model = AutoModelForCausalLM.from_pretrained(
-        "microsoft/phi-2",  # Make sure to use the correct model ID
+        "meta-llama/Meta-Llama-3-8B",  # Make sure to use the correct model ID
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
@@ -423,9 +423,9 @@ if __name__ == "__main__":
     # chat_instance.create_jsonl(data_pairs)
     # Initialize model and tokenizer
     model = load_language_model()
-    base_model_name = "phi2"
+    base_model_name = "llama3"
     run_name = f"{base_model_name}-routing-table"
-    tokenizer = AutoTokenizer.from_pretrained("Microsoft/phi-2")
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B")
 
     print("Tokenizer vocab size before:", len(tokenizer))
     # Add a pad token if it does not exist
