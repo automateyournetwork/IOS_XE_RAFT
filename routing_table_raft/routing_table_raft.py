@@ -27,7 +27,7 @@ os.environ["WANDB_PROJECT"] = "phi2-finetune" if "phi2-finetune" else ""
 
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
-os.environ["HF_HOME"] = os.getenv('HUGGINGFACE_TOKEN')
+os.environ["HF_TOKEN"] = os.getenv('HUGGINGFACE_TOKEN')
 
 def load_embedding_model():
     print("Loading Embeddings Model..")
