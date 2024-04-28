@@ -12,8 +12,8 @@ def main():
     # Authenticate with the token
     transformers.hf_hub_url.hf_hub_url.set_access_token(api_token)
     
-    model_dir = "./llama3-routing-table"
-    base_model = "mistralai/Mistral-7B-Instruct-v0.2"  # Base model for reference if needed
+    model_dir = "./phi3-routing-table"
+    base_model = "microsoft/Phi-3-mini-128k-instruct"  # Base model for reference if needed
 
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
