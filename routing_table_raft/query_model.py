@@ -9,7 +9,7 @@ base_model = "microsoft/phi-2"
 tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
 
-ft_model = PeftModel.from_pretrained(base_model, "phi2-routing-table")
+ft_model = PeftModel.from_pretrained(model_dir, "phi2-routing-table")
 
 eval_prompt = "What is my default route?"
 model_input = tokenizer(eval_prompt, return_tensors="pt").to("cuda")
