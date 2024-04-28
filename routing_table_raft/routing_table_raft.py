@@ -436,7 +436,7 @@ if __name__ == "__main__":
 
     print("Tokenizer vocab size after:", len(tokenizer))
 
-    # Save the tokenizer and model immediately after adjustments
+    print("Saving tokenizer and model to:", f"./{run_name}")
     tokenizer.save_pretrained(f"./{run_name}")
     model.save_pretrained(f"./{run_name}")
 
