@@ -30,9 +30,6 @@ load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
 api_token = os.getenv('HUGGINGFACE_TOKEN')
 
-# Use the token for authentication
-transformers.huggingface_hub.hf_api.HfApi().set_access_token(api_token)
-
 def load_embedding_model():
     print("Loading Embeddings Model..")
     #return HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-large", model_kwargs={"device": "cuda"})
@@ -41,7 +38,8 @@ def load_embedding_model():
 def load_language_model():
     print("Loading llama3 with LoRA adapters..")
     model = AutoModelForCausalLM.from_pretrained(
-        "meta-llama/Meta-Llama-3-8B",  # Make sure to use the correct model ID
+        "meta-llama/Meta-Llama-3-8B",
+        use_auth_token=api_token,
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
