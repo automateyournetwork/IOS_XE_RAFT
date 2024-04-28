@@ -4,8 +4,14 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 def main():
     # Load model and tokenizer
     model_dir = "./phi2-routing-table"
+    # Try loading the model first to inspect it
+    try:
+        model = AutoModelForCausalLM.from_pretrained(model_dir)
+        print("Model loaded successfully.")
+        print(f"Model's tokenizer vocab size: {model.config.vocab_size}")
+    except Exception as e:
+        print(f"Error loading model: {e}")    
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
-    model = AutoModelForCausalLM.from_pretrained(model_dir, local_files_only=True)
 
     # Ensure tokenizer and model's vocab size match
     if tokenizer.vocab_size != model.config.vocab_size:
