@@ -29,7 +29,9 @@ os.environ["WANDB_PROJECT"] = "phi2-finetune" if "phi2-finetune" else ""
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
 api_token = os.getenv('HUGGINGFACE_TOKEN')
-transformers.hf_hub_url.hf_hub_url.set_access_token(api_token)
+
+# Use the token for authentication
+transformers.huggingface_hub.hf_api.HfApi().set_access_token(api_token)
 
 def load_embedding_model():
     print("Loading Embeddings Model..")
