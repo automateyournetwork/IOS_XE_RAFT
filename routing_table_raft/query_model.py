@@ -14,7 +14,7 @@ def generate_answer(model, tokenizer, question, max_length=128, num_beams=5):
     inputs = {key: value.to(model.device) for key, value in inputs.items()}
     output = model.generate(
         **inputs, 
-        max_new_tokens=512, 
+        max_length=50, 
         num_beams=num_beams, 
         no_repeat_ngram_size=2,
         temperature=0.5,  # Lower temperature to reduce randomness
@@ -29,10 +29,6 @@ def main():
     # Define the directory where your fine-tuned model is saved
     model_dir = "./phi2-routing-table"
     model, tokenizer = load_model(model_dir)
-    
-    # Print tokenizer and model embedding sizes to check alignment
-    print("Tokenizer vocab size:", len(tokenizer))
-    print("Model embedding size:", model.get_input_embeddings().num_embeddings)
 
     # Example questions to test the model
     questions = [
