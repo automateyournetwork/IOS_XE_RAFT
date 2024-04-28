@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Initialize wandb
 wandb.login()
-os.environ["WANDB_PROJECT"] = "phi2-finetune" if "phi2-finetune" else ""
+os.environ["WANDB_PROJECT"] = "llama3-finetune" if "llama3-finetune" else ""
 
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
@@ -38,7 +38,7 @@ def load_embedding_model():
 def load_language_model():
     print("Loading llama3 with LoRA adapters..")
     model = AutoModelForCausalLM.from_pretrained(
-        "microsoft/Phi-3-mini-128k-instruct",  # Make sure to use the correct model ID
+        "meta-llama/Meta-Llama-Guard-2-8B",  # Make sure to use the correct model ID
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
@@ -77,7 +77,6 @@ class ChatWithRoutingTable:
 
     def setup_conversation_retrieval_chain(self):
         print("Setup conversation..")
-        #llm = Ollama(model="phi")
         llm = ChatOpenAI(temperature=0, model="gpt-4-1106-preview")
         self.qa = ConversationalRetrievalChain.from_llm(llm, self.vectordb.as_retriever(search_kwargs={"k": 5}))
 
