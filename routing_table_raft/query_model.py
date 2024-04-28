@@ -13,7 +13,7 @@ def main():
     transformers.hf_hub_url.hf_hub_url.set_access_token(api_token)
     
     model_dir = "./phi3-routing-table"
-    base_model = "microsoft/Phi-3-mini-128k-instruct"  # Base model for reference if needed
+    base_model = "meta-llama/Meta-Llama-Guard-2-8B"  # Base model for reference if needed
 
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_dir)

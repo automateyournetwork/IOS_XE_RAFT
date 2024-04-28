@@ -425,9 +425,9 @@ if __name__ == "__main__":
     # chat_instance.create_jsonl(data_pairs)
     # Initialize model and tokenizer
     model = load_language_model()
-    base_model_name = "phi3"
+    base_model_name = "llama3"
     run_name = f"{base_model_name}-routing-table"
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B")
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-Guard-2-8B")
 
     print("Tokenizer vocab size before:", len(tokenizer))
     # Add a pad token if it does not exist
