@@ -27,6 +27,7 @@ os.environ["WANDB_PROJECT"] = "phi2-finetune" if "phi2-finetune" else ""
 
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
+token = os.getenv('HUGGINGFACE_TOKEN')
 os.environ["HF_TOKEN"] = os.getenv('HUGGINGFACE_TOKEN')
 
 def load_embedding_model():
@@ -38,6 +39,7 @@ def load_language_model():
     print("Loading llama3 with LoRA adapters..")
     model = AutoModelForCausalLM.from_pretrained(
         "mistralai/Mistral-7B-Instruct-v0.2",  # Make sure to use the correct model ID
+        token=token,
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
