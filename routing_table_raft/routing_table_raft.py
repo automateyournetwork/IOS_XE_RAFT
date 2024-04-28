@@ -3,7 +3,6 @@ import json
 import wandb
 import torch
 import logging
-import transformers
 from datetime import datetime
 from datasets import load_dataset
 from peft import LoraConfig, get_peft_model
@@ -15,7 +14,7 @@ from langchain_experimental.text_splitter import SemanticChunker
 from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 from accelerate import FullyShardedDataParallelPlugin, Accelerator
 from torch.distributed.fsdp.fully_sharded_data_parallel import FullOptimStateDictConfig, FullStateDictConfig
-from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, DataCollatorForLanguageModeling
+from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, DataCollatorForLanguageModeling, AutoModel
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
@@ -28,7 +27,7 @@ os.environ["WANDB_PROJECT"] = "phi2-finetune" if "phi2-finetune" else ""
 
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
-api_token = os.getenv('HUGGINGFACE_TOKEN')
+access_token = os.getenv('HUGGINGFACE_TOKEN')
 
 def load_embedding_model():
     print("Loading Embeddings Model..")
@@ -39,7 +38,7 @@ def load_language_model():
     print("Loading llama3 with LoRA adapters..")
     model = AutoModelForCausalLM.from_pretrained(
         "meta-llama/Meta-Llama-3-8B",
-        use_auth_token=api_token,
+         use_auth_token=access_token,  # Make sure to use the correct model ID
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
