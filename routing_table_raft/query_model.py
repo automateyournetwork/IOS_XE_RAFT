@@ -32,11 +32,10 @@ def main():
     model_dir = "./phi2-routing-table"
     model, tokenizer = load_model(model_dir)
 
-    print("Tokenizer vocab size:", len(tokenizer))
-    print("Model embedding size:", model.get_input_embeddings().num_embeddings)
-
+    # Confirm the model's embeddings match the tokenizer's vocabulary size
     assert len(tokenizer) == model.get_input_embeddings().num_embeddings, "Mismatch in tokenizer and model embeddings count"
 
+    # Ask questions to test the model
     questions = ["What is my default route?", "What is the next hop for my default route?", "What interface does my default route use?"]
     for question in questions:
         answer = generate_answer(model, tokenizer, question)
