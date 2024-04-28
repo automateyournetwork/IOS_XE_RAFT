@@ -1,8 +1,18 @@
+import os
 import torch
+import transformers
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel  # Ensure PEFT is correctly imported
+from dotenv import load_dotenv
+
+load_dotenv()
+api_token = os.getenv('HUGGINGFACE_TOKEN')
+# Set your API token here
 
 def main():
+    # Authenticate with the token
+    transformers.hf_hub_url.hf_hub_url.set_access_token(api_token)
+    
     model_dir = "./llama3-routing-table"
     base_model = "meta-llama/Meta-Llama-3-8B"  # Base model for reference if needed
 
