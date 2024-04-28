@@ -3,6 +3,7 @@ import json
 import wandb
 import torch
 import logging
+import transformers
 from datetime import datetime
 from datasets import load_dataset
 from peft import LoraConfig, get_peft_model
@@ -27,6 +28,8 @@ os.environ["WANDB_PROJECT"] = "phi2-finetune" if "phi2-finetune" else ""
 
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
+api_token = os.getenv('HUGGINGFACE_TOKEN')
+transformers.hf_hub_url.hf_hub_url.set_access_token(api_token)
 
 def load_embedding_model():
     print("Loading Embeddings Model..")

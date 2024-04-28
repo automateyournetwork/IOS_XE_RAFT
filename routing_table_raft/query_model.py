@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 api_token = os.getenv('HUGGINGFACE_TOKEN')
-# Set your API token here
 
 def main():
     # Authenticate with the token
