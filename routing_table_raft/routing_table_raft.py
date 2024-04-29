@@ -41,25 +41,34 @@ peft_config = LoraConfig(
     target_modules=['gate_up_proj', 'down_proj', 'qkv_proj', 'o_proj']
 )
 
+# Load and prepare dataset
 file_path = "train_dataset.jsonl"
-dataset = raw_dataset = load_dataset('json', data_files={'train': file_path}, split='train')
-dataset = dataset.shuffle(seed=42).select(range(253))
+dataset = load_dataset('json', data_files={'train': file_path}, split='train')
+dataset = dataset.shuffle(seed=42).select(range(min(253, len(dataset))))
 
-def format_for_training(example):
-    # Example transformation to create a 'prompt' field
-    system_statement = example['messages'][0]['content']  # Assuming the first message is always the system role
-    user_question = example['messages'][1]['content']  # Assuming the second message is always the user role
-    example['prompt'] = f"{system_statement} {user_question}"
-    example['labels'] = example['messages'][2]['content']  # Assuming the third message is always the assistant's response
-    return example
+def format_dataset(entry):
+    # Concatenate system and user messages to form the prompt
+    prompt = f"{entry['messages'][0]['content']} {entry['messages'][1]['content']}"
+    
+    # Get the assistant's response for 'chosen'
+    chosen = entry['messages'][2]['content']
+    
+    # Hardcode a generic 'rejected' response
+    rejected = "I don't know"
+    
+    # Return the new structure
+    return {'prompt': prompt, 'chosen': chosen, 'rejected': rejected}
 
-# Apply this transformation to each dataset entry
-dataset = dataset.map(format_for_training)
+# Transform the dataset
+transformed_dataset = dataset.map(format_dataset, batched=False)  # Ensure batched is False if working with individual records
 
-dataset = dataset.train_test_split(test_size=0.01)
+# Split the transformed dataset for training and testing
+split_dataset = transformed_dataset.train_test_split(test_size=0.01)
 
-print(dataset['train'][0])
+print(transformed_dataset[0])
+print(transformed_dataset[1])
 
+# Configuration for training
 orpo_args = ORPOConfig(
     learning_rate=8e-6,
     lr_scheduler_type="linear",
@@ -79,13 +88,18 @@ orpo_args = ORPOConfig(
     push_to_hub=True
 )
 
+# Initialize the trainer
 trainer = ORPOTrainer(
     model=model,
     args=orpo_args,
-    train_dataset=dataset["train"],
+    train_dataset=split_dataset["train"],
+    eval_dataset=split_dataset["test"],
     peft_config=peft_config,
     tokenizer=tokenizer,
 )
 
+# Start training
 trainer.train()
+
+# Save the trained model
 trainer.save_model(new_model)
