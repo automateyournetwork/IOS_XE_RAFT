@@ -8,7 +8,6 @@ from huggingface_hub import login
 
 load_dotenv()
 token = os.getenv('HUGGINGFACE_TOKEN')
-os.environ["HF_TOKEN"] = os.getenv('HUGGINGFACE_TOKEN')
 login(token=token)
 
 def main():
