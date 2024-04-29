@@ -39,7 +39,7 @@ def main():
 
     # Example inference to check the model
     questions = [
-        "What is my default route?",
+        "What is my default route, the next hop, and outgoing interface?",
         "What is the next hop for my default route?",
         "What interface does my default route use?"
     ]
@@ -51,7 +51,7 @@ def main():
 def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
     """Generate answers using the fine-tuned model."""
     # Enhanced prompt with system role introduction and user question
-    system_intro = "You are a computer networking expert specializing in network routing tables. I have fine-tuned your knowledge with my routing table data. Please use this data to help answer the following question:"
+    system_intro = "You are a computer networking expert specializing in network routing tables:"
     user_question = f"User: {question}"
     prompt = f"{system_intro} {user_question} Answer:"
     
@@ -68,7 +68,7 @@ def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
             max_length=max_length,
             num_beams=num_beams,
             early_stopping=True,
-            temperature=0  # Lower for more deterministic output
+            do_sample=True  # Lower for more deterministic output
         )
 
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
