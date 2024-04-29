@@ -159,9 +159,14 @@ def apply_chat_template(
     return example
 
 
+# Load your dataset
 raw_dataset = load_dataset("json", data_files="train_dataset.jsonl", split='train')
-train_dataset = raw_dataset["train_sft"]
-test_dataset = raw_dataset["test_sft"]
+
+# Optionally split the dataset if no predefined test set
+train_test_split = raw_dataset.train_test_split(test_size=0.1)  # 10% for testing
+train_dataset = train_test_split['train']
+test_dataset = train_test_split['test']
+
 column_names = list(train_dataset.features)
 
 processed_train_dataset = train_dataset.map(
