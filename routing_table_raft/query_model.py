@@ -50,13 +50,17 @@ def main():
 
 def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
     """Generate answers using the fine-tuned model."""
-    prompt = f"{question} Answer:"
+    # Enhanced prompt with system role introduction and user question
+    system_intro = "You are a computer networking expert specializing in network routing tables."
+    user_question = f"User: {question}"
+    prompt = f"{system_intro} {user_question} Answer:"
+    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device).eval()
 
     inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
     inputs = {k: v.to(device) for k, v in inputs.items()}
-    
+
     with torch.no_grad():
         outputs = model.generate(
             input_ids=inputs['input_ids'],
@@ -65,11 +69,11 @@ def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
             num_beams=num_beams,
             early_stopping=True,
             temperature=0.5,  # Lower for more deterministic output
-            top_p=0.9,  # Narrow down the token probability distribution            
+            top_p=0.9,  # Narrow down the token probability distribution
         )
-    
+
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return answer
+    return answer.strip()
 
 if __name__ == "__main__":
     main()
