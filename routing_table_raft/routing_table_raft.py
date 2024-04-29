@@ -44,7 +44,7 @@ peft_config = LoraConfig(
 # Load and prepare dataset
 file_path = "train_dataset.jsonl"
 dataset = load_dataset('json', data_files={'train': file_path}, split='train')
-dataset = dataset.shuffle(seed=42).select(range(min(253, len(dataset))))
+dataset = dataset.shuffle(seed=42).select(range(min(25000, len(dataset))))
 
 def format_dataset(entry):
     # Concatenate system and user messages to form the prompt
@@ -75,14 +75,14 @@ orpo_args = ORPOConfig(
     max_length=512,
     max_prompt_length=246,
     beta=0.1,
-    per_device_train_batch_size=2,
-    per_device_eval_batch_size=2,
+    per_device_train_batch_size=50,
+    per_device_eval_batch_size=50,
     gradient_accumulation_steps=4,
     optim="paged_adamw_8bit",
     num_train_epochs=1,
     evaluation_strategy="steps",
-    eval_steps=0.2,
-    logging_steps=1,
+    eval_steps=50,
+    logging_steps=50,
     warmup_steps=10,
     output_dir=new_model,
     push_to_hub=False
