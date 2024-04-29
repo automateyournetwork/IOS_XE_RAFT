@@ -1,69 +1,56 @@
 import os
 import torch
-import transformers
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from peft import PeftModel  # Ensure PEFT is correctly imported
+from peft import PeftModel  # Make sure this is correct usage
 from dotenv import load_dotenv
 
-def main():   
+def main():
     model_dir = "./phi3-routing-table"
-    base_model = "microsoft/Phi-3-mini-128k-instruct"  # Base model for reference if needed
+    base_model = "microsoft/Phi-3-mini-128k-instruct"
 
-    # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Load the base model
     try:
-        base_model_instance = AutoModelForCausalLM.from_pretrained(base_model, local_files_only=True)
+        # Load the base model
+        base_model_instance = AutoModelForCausalLM.from_pretrained(base_model, local_files_only=True).to(device)
         print("Base model loaded successfully.")
+
+        # Load the PEFT model, adjust if necessary how PeftModel is supposed to be used
+        fine_tuned_model = PeftModel.from_pretrained(model_dir).to(device)  # Assuming model_dir contains fine-tuned model
+        print("PEFT model loaded successfully.")
     except Exception as e:
-        print(f"Failed to load base model: {e}")
+        print(f"Error loading models: {e}")
         return
 
-    # Resize token embeddings if necessary
     if len(tokenizer) != base_model_instance.config.vocab_size:
         print("Resizing token embeddings to match tokenizer's vocabulary size.")
         base_model_instance.resize_token_embeddings(len(tokenizer))
 
-    # Apply PEFT or load a PEFT model
-    try:
-        fine_tuned_model  = PeftModel.from_pretrained(base_model_instance, model_dir)  # Adjust as necessary
-        print("PEFT model loaded successfully.")
-    except Exception as e:
-        print(f"Failed to load PEFT model: {e}")
-        return
-
-    # Save the adjusted model and tokenizer
+    # Save the tokenizer and the fine-tuned model (if this is the one you want to keep)
     tokenizer.save_pretrained(model_dir)
-    base_model_instance.save_pretrained(model_dir)
+    fine_tuned_model.save_pretrained(model_dir)
 
-    # Example inference to check the model
     questions = [
         "What is my default route, the next hop, and outgoing interface?",
         "What is the next hop for my default route?",
         "What interface does my default route use?"
     ]
 
-    print("\nTesting Base Model:")
-    for question in questions:
-        answer = ask_model(question, base_model_instance, tokenizer)
-        print(f"Question: {question}\nBase Model Answer: {answer}\n")
+    # Testing the models
+    test_model("Base Model", base_model_instance, tokenizer, questions, device)
+    test_model("Fine-Tuned Model", fine_tuned_model, tokenizer, questions, device)
 
-    print("\nTesting Fine-Tuned Model:")
+def test_model(model_name, model, tokenizer, questions, device):
+    print(f"\nTesting {model_name}:")
     for question in questions:
-        answer = ask_model(question, fine_tuned_model, tokenizer)
-        print(f"Question: {question}\nFine-Tuned Model Answer: {answer}\n")
+        answer = ask_model(question, model, tokenizer, device)
+        print(f"Question: {question}\nAnswer: {answer}\n")
 
-def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
-    """Generate answers using the fine-tuned model."""
-    # Enhanced prompt with system role introduction and user question
-    system_intro = "You are a computer networking expert specializing in network routing tables"
-    user_question = f"User: {question}"
-    prompt = f"{system_intro} {user_question} Answer:"
+def ask_model(question, model, tokenizer, device, max_length=512, num_beams=5):
+    system_intro = "You are a computer networking expert specializing in network routing tables."
+    prompt = f"{system_intro} User: {question} Answer:"
     
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device).eval()
-
     inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
     inputs = {k: v.to(device) for k, v in inputs.items()}
 
@@ -74,11 +61,10 @@ def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
             max_length=max_length,
             num_beams=num_beams,
             early_stopping=True,
-            do_sample=True  # Lower for more deterministic output
+            do_sample=False
         )
 
-    answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return answer.strip()
+    return tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
 
 if __name__ == "__main__":
     main()
