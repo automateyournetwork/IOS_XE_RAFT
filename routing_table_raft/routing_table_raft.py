@@ -29,7 +29,6 @@ os.environ["WANDB_PROJECT"] = "llama3-finetune" if "llama3-finetune" else ""
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
 token = os.getenv('HUGGINGFACE_TOKEN')
-os.environ["HF_TOKEN"] = os.getenv('HUGGINGFACE_TOKEN')
 login(token=token)
 
 def load_embedding_model():
