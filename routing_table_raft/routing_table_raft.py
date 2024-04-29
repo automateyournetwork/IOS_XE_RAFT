@@ -36,7 +36,7 @@ def load_embedding_model():
 def load_language_model():
     print("Loading llama3 with LoRA adapters..")
     model = AutoModelForCausalLM.from_pretrained(
-        "microsoft/Phi-3-mini-128k-instruct-mini-128k-instruct",  # Make sure to use the correct model ID
+        "microsoft/Phi-3-mini-128k-instruct",  # Make sure to use the correct model ID
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
@@ -424,7 +424,7 @@ if __name__ == "__main__":
     model = load_language_model()
     base_model_name = "phi3"
     run_name = f"{base_model_name}-routing-table"
-    tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-128k-instruct-mini-128k-instruct")
+    tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-128k-instruct")
 
     print("Tokenizer vocab size before:", len(tokenizer))
     # Add a pad token if it does not exist
