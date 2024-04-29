@@ -9,13 +9,14 @@ def main():
     model_dir = "./phi3-routing-table"
     base_model = "microsoft/Phi-3-mini-128k-instruct"  # Base model for reference if needed
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
     # Load the base model
     try:
-        base_model_instance = AutoModelForCausalLM.from_pretrained(base_model, local_files_only=True)
+        base_model_instance = AutoModelForCausalLM.from_pretrained(base_model, local_files_only=True, trust_remote_code=True)
+        base_model_instance = base_model_instance.to(device)
         print("Base model loaded successfully.")
     except Exception as e:
         print(f"Failed to load base model: {e}")
@@ -29,6 +30,7 @@ def main():
     # Apply PEFT or load a PEFT model
     try:
         fine_tuned_model  = PeftModel.from_pretrained(base_model_instance, model_dir)  # Adjust as necessary
+        fine_tuned_model = fine_tuned_model.to(device)
         print("PEFT model loaded successfully.")
     except Exception as e:
         print(f"Failed to load PEFT model: {e}")
