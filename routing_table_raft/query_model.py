@@ -68,8 +68,7 @@ def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
             max_length=max_length,
             num_beams=num_beams,
             early_stopping=True,
-            temperature=0.5,  # Lower for more deterministic output
-            top_p=0.9,  # Narrow down the token probability distribution
+            temperature=0  # Lower for more deterministic output
         )
 
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
