@@ -1,16 +1,12 @@
-import gc
 import os
-
 import torch
 from datasets import load_dataset
-from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training
+from peft import LoraConfig, prepare_model_for_kbit_training
 from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    BitsAndBytesConfig,
-    TrainingArguments,
-    pipeline,
-)
+        AutoModelForCausalLM,
+        AutoTokenizer,
+        BitsAndBytesConfig,
+    )
 from trl import ORPOConfig, ORPOTrainer, setup_chat_format
 
 # Model
@@ -47,7 +43,7 @@ peft_config = LoraConfig(
 
 file_path = "train_dataset.jsonl"
 dataset = raw_dataset = load_dataset('json', data_files={'train': file_path}, split='train')
-dataset = dataset.shuffle(seed=42).select(range(1000)) # Only use 1000 samples for quick demo
+dataset = dataset.shuffle(seed=42).select(range(253))
 
 def format_chat_template(row):
     row["chosen"] = tokenizer.apply_chat_template(row["chosen"], tokenize=False)
