@@ -126,8 +126,8 @@ logger.info(f"PEFT parameters {peft_conf}")
 ################
 # Modle Loading
 ################
-checkpoint_path = "microsoft/Phi-3-mini-4k-instruct"
-# checkpoint_path = "microsoft/Phi-3-mini-128k-instruct"
+#checkpoint_path = "microsoft/Phi-3-mini-4k-instruct"
+checkpoint_path = "microsoft/Phi-3-mini-128k-instruct"
 model_kwargs = dict(
     use_cache=False,
     trust_remote_code=True,
