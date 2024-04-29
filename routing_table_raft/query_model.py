@@ -51,7 +51,7 @@ def main():
 def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
     """Generate answers using the fine-tuned model."""
     # Enhanced prompt with system role introduction and user question
-    system_intro = "You are a computer networking expert specializing in network routing tables."
+    system_intro = "You are a computer networking expert specializing in network routing tables. I have fine-tuned your knowledge with my routing table data. Please use this data to help answer the following question:"
     user_question = f"User: {question}"
     prompt = f"{system_intro} {user_question} Answer:"
     
