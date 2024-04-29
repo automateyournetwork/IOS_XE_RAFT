@@ -39,7 +39,6 @@ def main():
 
     # Example inference to check the model
     questions = [
-        "What can you tell me about my routing table?",
         "What is my default route?",
         "What is the next hop for my default route?",
         "What interface does my default route use?"
@@ -51,10 +50,11 @@ def main():
 
 def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
     """Generate answers using the fine-tuned model."""
+    prompt = f"{question} Answer:"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device).eval()
 
-    inputs = tokenizer(question, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
+    inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
     inputs = {k: v.to(device) for k, v in inputs.items()}
     
     with torch.no_grad():
@@ -63,7 +63,9 @@ def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
             attention_mask=inputs['attention_mask'],
             max_length=max_length,
             num_beams=num_beams,
-            early_stopping=True
+            early_stopping=True,
+            temperature=0.5,  # Lower for more deterministic output
+            top_p=0.9,  # Narrow down the token probability distribution            
         )
     
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
