@@ -4,9 +4,12 @@ import transformers
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel  # Ensure PEFT is correctly imported
 from dotenv import load_dotenv
+from huggingface_hub import login
 
 load_dotenv()
-api_token = os.getenv('HUGGINGFACE_TOKEN')
+token = os.getenv('HUGGINGFACE_TOKEN')
+os.environ["HF_TOKEN"] = os.getenv('HUGGINGFACE_TOKEN')
+login()
 
 def main():
     # Authenticate with the token

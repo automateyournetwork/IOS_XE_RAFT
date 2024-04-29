@@ -17,6 +17,7 @@ from torch.distributed.fsdp.fully_sharded_data_parallel import FullOptimStateDic
 from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, DataCollatorForLanguageModeling, AutoModel
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from huggingface_hub import login
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -27,8 +28,9 @@ os.environ["WANDB_PROJECT"] = "llama3-finetune" if "llama3-finetune" else ""
 
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
-# token = os.getenv('HUGGINGFACE_TOKEN')
-# os.environ["HF_TOKEN"] = os.getenv('HUGGINGFACE_TOKEN')
+token = os.getenv('HUGGINGFACE_TOKEN')
+os.environ["HF_TOKEN"] = os.getenv('HUGGINGFACE_TOKEN')
+login()
 
 def load_embedding_model():
     print("Loading Embeddings Model..")
