@@ -105,20 +105,23 @@ class ChatWithRoutingTable:
         }
         return formatted_example
 
+def formatting_func(example):
+    # Format the input and output into a prompt-answer style
+    text = f"### Question: {example['input']}\n### Answer: {example['output']}"
+    return text
+
 def tokenize_and_format(batch, tokenizer):
-    # Ensure all inputs and outputs are strings
-    inputs = [str(i) for i in batch['input']]
-    outputs = [str(o) for o in batch['output']]
+    # Create formatted prompts for each example in the batch
+    formatted_examples = [formatting_func(example) for example in batch]
+    
+    # Tokenizing the formatted examples
+    model_inputs = tokenizer(formatted_examples, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
 
-    # Tokenizing inputs and outputs
-    model_inputs = tokenizer(inputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
-    model_outputs = tokenizer(outputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
-
-    # Return a dictionary matching the expected structure
+    # Return the tokenized inputs; no separate output processing needed if using a single sequence for training
     return {
         "input_ids": model_inputs['input_ids'],
         "attention_mask": model_inputs['attention_mask'],
-        "labels": model_outputs['input_ids']
+        # If labels are needed for some reason, handle them accordingly
     }
 
 def attach_lora_adapters(model):
