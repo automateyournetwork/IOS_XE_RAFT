@@ -34,15 +34,15 @@ def load_embedding_model():
     return OpenAIEmbeddings()
 
 def load_language_model():
-    print("Loading llama3 with LoRA adapters..")
+    print("Loading microsoft/Phi-2 with LoRA adapters..")
     model = AutoModelForCausalLM.from_pretrained(
-        "microsoft/Phi-3-mini-128k-instruct",  # Make sure to use the correct model ID
+        "microsoft/Phi-2",  # Make sure to use the correct model ID
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
     )
-    # model = attach_lora_adapters(model)
-    # print_trainable_parameters(model)
+    model = attach_lora_adapters(model)
+    print_trainable_parameters(model)
     return model
 
 def run_pyats_job():
@@ -121,23 +121,23 @@ def tokenize_and_format(batch, tokenizer):
         "labels": model_outputs['input_ids']
     }
 
-# def attach_lora_adapters(model):
-#     # Configuring LoRA
-#     config = LoraConfig(
-#         r=32,
-#         lora_alpha=64,
-#         target_modules=[
-#             "Wqkv",
-#             "fc1",
-#             "fc2",
-#         ],
-#         bias="none",
-#         lora_dropout=0.05,  # Conventional
-#         task_type="CAUSAL_LM",
-#     )
-#     # Applying LoRA to the model
-#     model = get_peft_model(model, config)
-#     return model
+def attach_lora_adapters(model):
+    # Configuring LoRA
+    config = LoraConfig(
+        r=32,
+        lora_alpha=64,
+        target_modules=[
+            "Wqkv",
+            "fc1",
+            "fc2",
+        ],
+        bias="none",
+        lora_dropout=0.05,  # Conventional
+        task_type="CAUSAL_LM",
+    )
+    # Applying LoRA to the model
+    model = get_peft_model(model, config)
+    return model
 
 def print_trainable_parameters(model):
     """
@@ -422,9 +422,9 @@ if __name__ == "__main__":
     # chat_instance.create_jsonl(data_pairs)
     # Initialize model and tokenizer
     model = load_language_model()
-    base_model_name = "phi3"
+    base_model_name = "microsoft/Phi-2"
     run_name = f"{base_model_name}-routing-table"
-    tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-128k-instruct")
+    tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-2")
 
     print("Tokenizer vocab size before:", len(tokenizer))
     # Add a pad token if it does not exist

@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 def main():   
     model_dir = "./phi3-routing-table"
-    base_model = "microsoft/Phi-3-mini-128k-instruct"  # Base model for reference if needed
+    base_model = "microsoft/Phi-2"  # Base model for reference if needed
 
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
