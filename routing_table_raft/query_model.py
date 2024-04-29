@@ -4,18 +4,10 @@ import transformers
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel  # Ensure PEFT is correctly imported
 from dotenv import load_dotenv
-from huggingface_hub import login
 
-load_dotenv()
-token = os.getenv('HUGGINGFACE_TOKEN')
-login(token=token)
-
-def main():
-    # Authenticate with the token
-    transformers.hf_hub_url.hf_hub_url.set_access_token(api_token)
-    
+def main():   
     model_dir = "./phi3-routing-table"
-    base_model = "microsoft/phi-3"  # Base model for reference if needed
+    base_model = "microsoft/Phi-3-mini-128k-instruct"  # Base model for reference if needed
 
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
