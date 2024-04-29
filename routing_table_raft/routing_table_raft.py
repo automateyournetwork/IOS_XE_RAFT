@@ -58,11 +58,14 @@ def format_chat_template(example):
     return example
 
 dataset = dataset.map(
-    format_chat_template,
-    batched=False,  
-    num_proc=os.cpu_count()  
+        format_chat_template,
+        batched=False,  
+        num_proc=os.cpu_count()  
+    )
 
 dataset = dataset.train_test_split(test_size=0.01)
+
+dataset["train"][0]
 
 orpo_args = ORPOConfig(
     learning_rate=8e-6,
