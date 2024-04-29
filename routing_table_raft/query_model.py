@@ -53,7 +53,7 @@ def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
     """Generate answers using the fine-tuned model."""
     prompt = f"You are a computer networking expert. {question} Answer:"
 
-    device = torch.device("cuda" if torch.cuda.is.available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device).eval()
 
     inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
@@ -65,8 +65,7 @@ def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
             attention_mask=inputs['attention_mask'],
             max_length=max_length,
             num_beams=num_beams,
-            early_stopping=True,
-            do_sample=True
+            early_stopping=True
         )
 
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
