@@ -63,7 +63,7 @@ def test_model(model_name, model, tokenizer, questions, device):
 def ask_model(question, model, tokenizer, device, max_length=512, num_beams=5):
     system_intro = "You are an expert in network routing tables."
     user_question = f"{question}"
-    prompt = f"{system_intro} {user_question} How would you answer this based on standard network protocols and configurations?"
+    prompt = f"{system_intro} {user_question} How would you answer this based on what you know about the routing table?"
 
     inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
     inputs = {k: v.to(device) for k, v in inputs.items()}
