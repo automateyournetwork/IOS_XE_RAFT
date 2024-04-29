@@ -45,9 +45,8 @@ peft_config = LoraConfig(
     target_modules=['gate_up_proj', 'down_proj', 'qkv_proj', 'o_proj']
 )
 
-file_path = 'train_dataset.jsonl'
-dataset_name = load_dataset('json', data_files={'train': file_path}, split='train')
-dataset = load_dataset(dataset_name, split="all")
+file_path = "train_dataset.jsonl"
+dataset = raw_dataset = load_dataset('json', data_files={'train': file_path}, split='train')
 dataset = dataset.shuffle(seed=42).select(range(1000)) # Only use 1000 samples for quick demo
 
 def format_chat_template(row):
