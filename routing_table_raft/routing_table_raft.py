@@ -45,15 +45,23 @@ file_path = "train_dataset.jsonl"
 dataset = raw_dataset = load_dataset('json', data_files={'train': file_path}, split='train')
 dataset = dataset.shuffle(seed=42).select(range(253))
 
-def format_chat_template(row):
-    row["chosen"] = tokenizer.apply_chat_template(row["chosen"], tokenize=False)
-    row["rejected"] = tokenizer.apply_chat_template(row["rejected"], tokenize=False)
-    return row
+def format_chat_template(example):
+    # Iterate through each message and apply formatting or processing
+    for message in example['messages']:
+        # Check the role and apply specific template or processing
+        if message['role'] == 'system':
+            message['content'] = f"System says: {message['content']}"
+        elif message['role'] == 'user':
+            message['content'] = f"User asks: {message['content']}"
+        elif message['role'] == 'assistant':
+            message['content'] = f"Assistant answers: {message['content']}"
+    return example
 
 dataset = dataset.map(
     format_chat_template,
-    num_proc= os.cpu_count(),
-)
+    batched=False,  
+    num_proc=os.cpu_count()  
+
 dataset = dataset.train_test_split(test_size=0.01)
 
 dataset["train"][0]
