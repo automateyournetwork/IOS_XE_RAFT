@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 def main():   
     model_dir = "./phi3-routing-table"
     base_model = "microsoft/Phi-3-mini-128k-instruct"  # Base model for reference if needed
-
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
