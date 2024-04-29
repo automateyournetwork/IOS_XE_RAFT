@@ -12,6 +12,13 @@ learning_rate = 1.41e-5
 per_device_train_batch_size = 2  # Reduced batch size
 gradient_accumulation_steps = 8  # Increased gradient accumulation
 
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+    print("CUDA is available. Using GPU.")
+else:
+    device = torch.device("cpu")
+    print("CUDA not available. Using CPU."
+
 model = AutoModelForCausalLM.from_pretrained(MODEL_ID, trust_remote_code=True)
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, trust_remote_code=True)
 dataset = load_dataset("json", data_files={"train": DATASET_PATH}, split="train")
