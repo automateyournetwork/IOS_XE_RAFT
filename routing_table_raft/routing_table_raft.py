@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Initialize wandb
 wandb.login()
-os.environ["WANDB_PROJECT"] = "microsoft/Phi-3-mini-128k-instruct" if "microsoft/Phi-3-mini-128k-instruct" else ""
+os.environ["WANDB_PROJECT"] = "ph2" if "phi2" else ""
 
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
