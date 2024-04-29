@@ -425,7 +425,7 @@ if __name__ == "__main__":
     # chat_instance.create_jsonl(data_pairs)
     # Initialize model and tokenizer
     model = load_language_model()
-    base_model_name = "microsoft/Phi-2"
+    base_model_name = "phi2"
     run_name = f"{base_model_name}-routing-table"
     tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-2")
 

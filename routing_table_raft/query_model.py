@@ -6,7 +6,7 @@ from peft import PeftModel  # Ensure PEFT is correctly imported
 from dotenv import load_dotenv
 
 def main():   
-    model_dir = "./phi3-routing-table"
+    model_dir = "./phi2-routing-table"
     base_model = "microsoft/Phi-2"  # Base model for reference if needed
 
     # Load tokenizer
