@@ -158,7 +158,8 @@ def apply_chat_template(
         messages, tokenize=False, add_generation_prompt=False)
     return example
 
-raw_dataset = load_dataset("train_dataset.jsonl")
+
+raw_dataset = load_dataset("json", data_files="train_dataset.jsonl", split='train')
 train_dataset = raw_dataset["train_sft"]
 test_dataset = raw_dataset["test_sft"]
 column_names = list(train_dataset.features)
