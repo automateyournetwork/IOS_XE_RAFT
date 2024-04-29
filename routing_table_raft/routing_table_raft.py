@@ -45,7 +45,8 @@ peft_config = LoraConfig(
     target_modules=['gate_up_proj', 'down_proj', 'qkv_proj', 'o_proj']
 )
 
-dataset_name = "train_dataset.jsonl"
+file_path = 'train_dataset.jsonl'
+dataset_name = load_dataset('json', data_files={'train': file_path}, split='train')
 dataset = load_dataset(dataset_name, split="all")
 dataset = dataset.shuffle(seed=42).select(range(1000)) # Only use 1000 samples for quick demo
 
