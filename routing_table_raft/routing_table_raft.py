@@ -91,20 +91,13 @@ class ChatWithRoutingTable:
                 file.write(json.dumps(data) + '\n')
 
     def formatting_func(self, example):
-        # Extract question and answer assuming the example is a tuple where
-        # example[0] is the question and example[1] is a dictionary with 'answer' as a key
+        # Adjust this function to handle extracting the answer text from the answer dictionary
         question = example[0]
-        answer = example[1]['answer']
-
-        # Create the formatted dictionary as per the new structure required
-        formatted_example = {
-            "messages": [
-                {"role": "system", "content": "You are a computer networking expert specializing in network routing tables."},
-                {"role": "user", "content": question},
-                {"role": "assistant", "content": answer}
-            ]
+        answer = example[1]['answer']  # Assuming 'answer' is a key in the dictionary that contains the actual response text
+        return {
+            "input": f"### Question: {question}",
+            "output": f"### Answer: {answer}"
         }
-        return formatted_example
 
 def tokenize_and_format(batch, tokenizer):
     # Ensure all inputs and outputs are strings
