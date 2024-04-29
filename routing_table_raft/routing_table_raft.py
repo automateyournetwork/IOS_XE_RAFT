@@ -17,7 +17,7 @@ if torch.cuda.is_available():
     print("CUDA is available. Using GPU.")
 else:
     device = torch.device("cpu")
-    print("CUDA not available. Using CPU."
+    print("CUDA not available. Using CPU.")
 
 model = AutoModelForCausalLM.from_pretrained(MODEL_ID, trust_remote_code=True)
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, trust_remote_code=True)
