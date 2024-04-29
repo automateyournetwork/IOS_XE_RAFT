@@ -45,27 +45,20 @@ file_path = "train_dataset.jsonl"
 dataset = raw_dataset = load_dataset('json', data_files={'train': file_path}, split='train')
 dataset = dataset.shuffle(seed=42).select(range(253))
 
-def format_chat_template(example):
-    # Iterate through each message and apply formatting or processing
-    for message in example['messages']:
-        # Check the role and apply specific template or processing
-        if message['role'] == 'system':
-            message['content'] = f"System says: {message['content']}"
-        elif message['role'] == 'user':
-            message['content'] = f"User asks: {message['content']}"
-        elif message['role'] == 'assistant':
-            message['content'] = f"Assistant answers: {message['content']}"
+def format_for_training(example):
+    # Example transformation to create a 'prompt' field
+    system_statement = example['messages'][0]['content']  # Assuming the first message is always the system role
+    user_question = example['messages'][1]['content']  # Assuming the second message is always the user role
+    example['prompt'] = f"{system_statement} {user_question}"
+    example['labels'] = example['messages'][2]['content']  # Assuming the third message is always the assistant's response
     return example
 
-dataset = dataset.map(
-        format_chat_template,
-        batched=False,  
-        num_proc=os.cpu_count()  
-    )
+# Apply this transformation to each dataset entry
+dataset = dataset.map(format_for_training)
 
 dataset = dataset.train_test_split(test_size=0.01)
 
-dataset["train"][0]
+print(dataset['train'][0])
 
 orpo_args = ORPOConfig(
     learning_rate=8e-6,
