@@ -99,22 +99,6 @@ class ChatWithRoutingTable:
             "output": f"### Answer: {answer}"
         }
 
-def tokenize_and_format(batch, tokenizer):
-    # Ensure all inputs and outputs are strings
-    inputs = [str(i) for i in batch['input']]
-    outputs = [str(o) for o in batch['output']]
-
-    # Tokenizing inputs and outputs
-    model_inputs = tokenizer(inputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
-    model_outputs = tokenizer(outputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
-
-    # Return a dictionary matching the expected structure
-    return {
-        "input_ids": model_inputs['input_ids'],
-        "attention_mask": model_inputs['attention_mask'],
-        "labels": model_outputs['input_ids']
-    }
-
 def attach_lora_adapters(model):
     # Configuring LoRA
     config = LoraConfig(
@@ -443,16 +427,8 @@ if __name__ == "__main__":
 
     def tokenize_and_format(examples):
         # This assumes 'examples' is a batch from 'train_dataset'
-        inputs = []
-        outputs = []
-
-        # Iterate through each example in the provided batch
-        for example in examples['messages']:
-            # Filter and concatenate messages based on their roles
-            input_text = " ".join(msg['content'] for msg in example if msg['role'] != 'assistant')
-            output_text = " ".join(msg['content'] for msg in example if msg['role'] == 'assistant')
-            inputs.append(input_text)
-            outputs.append(output_text)
+        inputs = examples['input']
+        outputs = examples['output']
 
         # Tokenize inputs and outputs
         model_inputs = tokenizer(inputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
@@ -473,6 +449,7 @@ if __name__ == "__main__":
         )
     except Exception as e:
         print(f"An error occurred during tokenization/formatting: {str(e)}")
+
 
     # Setup Accelerator for distributed training
     accelerator = Accelerator()
