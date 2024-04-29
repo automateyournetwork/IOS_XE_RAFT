@@ -85,7 +85,7 @@ orpo_args = ORPOConfig(
     logging_steps=1,
     warmup_steps=10,
     output_dir=new_model,
-    push_to_hub=True
+    push_to_hub=False
 )
 
 # Initialize the trainer
