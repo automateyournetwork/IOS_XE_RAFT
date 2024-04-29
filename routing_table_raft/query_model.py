@@ -23,7 +23,7 @@ def main():
     # Resize token embeddings if necessary
     if len(tokenizer) != base_model_instance.config.vocab_size:
         print("Resizing token embeddings to match tokenizer's vocabulary size.")
-        model.resize_token_embeddings(len(tokenizer))
+        base_model_instance.resize_token_embeddings(len(tokenizer))
 
     # Apply PEFT or load a PEFT model
     try:
