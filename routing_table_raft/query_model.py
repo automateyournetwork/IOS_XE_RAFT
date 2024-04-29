@@ -21,13 +21,13 @@ def main():
         return
 
     # Resize token embeddings if necessary
-    if len(tokenizer) != model.config.vocab_size:
+    if len(tokenizer) != base_model_instance.config.vocab_size:
         print("Resizing token embeddings to match tokenizer's vocabulary size.")
         model.resize_token_embeddings(len(tokenizer))
 
     # Apply PEFT or load a PEFT model
     try:
-        fine_tuned_model  = PeftModel.from_pretrained(model, model_dir)  # Adjust as necessary
+        fine_tuned_model  = PeftModel.from_pretrained(base_model_instance, model_dir)  # Adjust as necessary
         print("PEFT model loaded successfully.")
     except Exception as e:
         print(f"Failed to load PEFT model: {e}")
