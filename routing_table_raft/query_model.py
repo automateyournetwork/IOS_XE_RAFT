@@ -42,9 +42,12 @@ def main():
 
     # Example inference to check the model
     questions = [
-        "What is my default route, the next hop, and outgoing interface?",
+        "What is my default route?"
+        "What is my default route, the next hop, and outgoing interface? Hint: it is 0.0.0.0/0.",
         "What is the next hop for my default route?",
-        "What interface does my default route use?"
+        "What interface does my default route use?",
+        "What is the next hop for route 0.0.0.0/0?"
+        "What is the outgoing interface for route 0.0.0.0/0?"
     ]
 
     # Testing the models
@@ -58,9 +61,10 @@ def test_model(model_name, model, tokenizer, questions, device):
         print(f"Question: {question}\nAnswer: {answer}\n")
 
 def ask_model(question, model, tokenizer, device, max_length=512, num_beams=5):
-    system_intro = "You are a computer networking expert specializing in network routing tables."
-    prompt = f"{system_intro} User: {question} Answer:"
-    
+    system_intro = "You are an expert in network routing tables."
+    user_question = f"{question}"
+    prompt = f"{system_intro} {user_question} How would you answer this based on standard network protocols and configurations?"
+
     inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
     inputs = {k: v.to(device) for k, v in inputs.items()}
 
