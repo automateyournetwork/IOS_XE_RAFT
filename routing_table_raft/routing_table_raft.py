@@ -30,7 +30,7 @@ load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
 token = os.getenv('HUGGINGFACE_TOKEN')
 os.environ["HF_TOKEN"] = os.getenv('HUGGINGFACE_TOKEN')
-login()
+login(token=token)
 
 def load_embedding_model():
     print("Loading Embeddings Model..")
