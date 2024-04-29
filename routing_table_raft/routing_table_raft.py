@@ -1,174 +1,93 @@
-import sys
-import logging
-import datasets
-from datasets import load_dataset
-from peft import LoraConfig
+import gc
+import os
+
 import torch
-import transformers
-from trl import SFTTrainer
-from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, BitsAndBytesConfig
-
-logger = logging.getLogger(__name__)
-
-###################
-# Hyper-parameters
-###################
-training_config = {
-    "bf16": True,
-    "do_eval": False,
-    "learning_rate": 5.0e-06,
-    "log_level": "info",
-    "logging_steps": 20,
-    "logging_strategy": "steps",
-    "lr_scheduler_type": "cosine",
-    "num_train_epochs": 1,
-    "max_steps": -1,
-    "output_dir": "./phi3-routing-table",
-    "overwrite_output_dir": True,
-    "per_device_eval_batch_size": 4,
-    "per_device_train_batch_size": 4,
-    "remove_unused_columns": True,
-    "save_steps": 100,
-    "save_total_limit": 1,
-    "seed": 0,
-    "gradient_checkpointing": True,
-    "gradient_checkpointing_kwargs":{"use_reentrant": False},
-    "gradient_accumulation_steps": 1,
-    "warmup_ratio": 0.2,
-    }
-
-peft_config = {
-    "r": 16,
-    "lora_alpha": 32,
-    "lora_dropout": 0.05,
-    "bias": "none",
-    "task_type": "CAUSAL_LM",
-    "target_modules": "all-linear",
-    "modules_to_save": None,
-}
-train_conf = TrainingArguments(**training_config)
-peft_conf = LoraConfig(**peft_config)
-
-
-###############
-# Setup logging
-###############
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[logging.StreamHandler(sys.stdout)],
+from datasets import load_dataset
+from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    TrainingArguments,
+    pipeline,
 )
-log_level = train_conf.get_process_log_level()
-logger.setLevel(log_level)
-datasets.utils.logging.set_verbosity(log_level)
-transformers.utils.logging.set_verbosity(log_level)
-transformers.utils.logging.enable_default_handler()
-transformers.utils.logging.enable_explicit_format()
+from trl import ORPOConfig, ORPOTrainer, setup_chat_format
 
-# Log on each process a small summary
-logger.warning(
-    f"Process rank: {train_conf.local_rank}, device: {train_conf.device}, n_gpu: {train_conf.n_gpu}"
-    + f" distributed training: {bool(train_conf.local_rank != -1)}, 16-bits training: {train_conf.fp16}"
-)
-logger.info(f"Training/evaluation parameters {train_conf}")
-logger.info(f"PEFT parameters {peft_conf}")
+# Model
+base_model = "microsoft/Phi-3-mini-4k-instruct"
+new_model = "phi3-routing-table"
 
-
-################
-# Modle Loading
-################
-#checkpoint_path = "microsoft/Phi-3-mini-4k-instruct"
-checkpoint_path = "microsoft/Phi-3-mini-128k-instruct"
-model_kwargs = dict(
-    use_cache=False,
-    trust_remote_code=True,
-    attn_implementation="flash_attention_2",  # loading the model with flash-attenstion support
-    torch_dtype=torch.bfloat16,
-    device_map=None
-)
-model = AutoModelForCausalLM.from_pretrained(checkpoint_path, **model_kwargs)
-tokenizer = AutoTokenizer.from_pretrained(checkpoint_path)
-tokenizer.model_max_length = 2048
-tokenizer.pad_token = tokenizer.unk_token  # use unk rather than eos token to prevent endless generation
-tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
-tokenizer.padding_side = 'right'
-
-
-##################
-# Data Processing
-##################
-def apply_chat_template(
-    example,
-    tokenizer,
-):
-    messages = example["messages"]
-    # Add an empty system message if there is none
-    if messages[0]["role"] != "system":
-        messages.insert(0, {"role": "system", "content": ""})
-    example["text"] = tokenizer.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=False)
-    return example
-
-
-# Load your dataset
-raw_dataset = load_dataset("json", data_files="train_dataset.jsonl", split='train')
-
-# Optionally split the dataset if no predefined test set
-train_test_split = raw_dataset.train_test_split(test_size=0.1)  # 10% for testing
-train_dataset = train_test_split['train']
-test_dataset = train_test_split['test']
-
-column_names = list(train_dataset.features)
-
-processed_train_dataset = train_dataset.map(
-    apply_chat_template,
-    fn_kwargs={"tokenizer": tokenizer},
-    num_proc=10,
-    remove_columns=column_names,
-    desc="Applying chat template to train_sft",
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.float16,
+    bnb_4bit_use_double_quant=True,
 )
 
-processed_test_dataset = test_dataset.map(
-    apply_chat_template,
-    fn_kwargs={"tokenizer": tokenizer},
-    num_proc=10,
-    remove_columns=column_names,
-    desc="Applying chat template to test_sft",
+model = AutoModelForCausalLM.from_pretrained(
+    base_model,
+    quantization_config=bnb_config,
+    device_map="auto",
+    trust_remote_code=True
 )
 
+tokenizer = AutoTokenizer.from_pretrained(base_model)
 
-###########
-# Training
-###########
-trainer = SFTTrainer(
+model, tokenizer = setup_chat_format(model, tokenizer)
+model = prepare_model_for_kbit_training(model)
+
+peft_config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    bias="none",
+    task_type="CAUSAL_LM",
+    target_modules=['gate_up_proj', 'down_proj', 'qkv_proj', 'o_proj']
+)
+
+dataset_name = "train_dataset.jsonl"
+dataset = load_dataset(dataset_name, split="all")
+dataset = dataset.shuffle(seed=42).select(range(1000)) # Only use 1000 samples for quick demo
+
+def format_chat_template(row):
+    row["chosen"] = tokenizer.apply_chat_template(row["chosen"], tokenize=False)
+    row["rejected"] = tokenizer.apply_chat_template(row["rejected"], tokenize=False)
+    return row
+
+dataset = dataset.map(
+    format_chat_template,
+    num_proc= os.cpu_count(),
+)
+dataset = dataset.train_test_split(test_size=0.01)
+
+dataset["train"][0]
+
+orpo_args = ORPOConfig(
+    learning_rate=8e-6,
+    lr_scheduler_type="linear",
+    max_length=512,
+    max_prompt_length=246,
+    beta=0.1,
+    per_device_train_batch_size=2,
+    per_device_eval_batch_size=2,
+    gradient_accumulation_steps=4,
+    optim="paged_adamw_8bit",
+    num_train_epochs=1,
+    evaluation_strategy="steps",
+    eval_steps=0.2,
+    logging_steps=1,
+    warmup_steps=10,
+    output_dir=new_model,
+    push_to_hub=True
+)
+
+trainer = ORPOTrainer(
     model=model,
-    args=train_conf,
-    peft_config=peft_conf,
-    train_dataset=processed_train_dataset,
-    eval_dataset=processed_test_dataset,
-    max_seq_length=2048,
-    dataset_text_field="text",
+    args=orpo_args,
+    train_dataset=dataset["train"],
+    eval_dataset=dataset["test"],
+    peft_config=peft_config,
     tokenizer=tokenizer,
-    packing=True
 )
-train_result = trainer.train()
-metrics = train_result.metrics
-trainer.log_metrics("train", metrics)
-trainer.save_metrics("train", metrics)
-trainer.save_state()
-
-
-#############
-# Evaluation
-#############
-tokenizer.padding_side = 'left'
-metrics = trainer.evaluate()
-metrics["eval_samples"] = len(processed_test_dataset)
-trainer.log_metrics("eval", metrics)
-trainer.save_metrics("eval", metrics)
-
-
-# ############
-# # Save model
-# ############
-trainer.save_model(train_conf.output_dir)
+trainer.train()
+trainer.save_model(new_model)
