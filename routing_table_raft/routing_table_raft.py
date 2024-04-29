@@ -146,16 +146,18 @@ tokenizer.padding_side = 'right'
 ##################
 # Data Processing
 ##################
-def apply_chat_template(example):
-    # Assuming the function should tokenize and prepare the dataset entries
-    # Here we simply return the tokenized input and output
-    tokenized_input = tokenizer(example['input'], padding="max_length", truncation=True, max_length=512)
-    tokenized_output = tokenizer(example['output'], padding="max_length", truncation=True, max_length=512)
-    
-    return {
-        'input_ids': tokenized_input['input_ids'],  # or simply return tokenized_input if using transformers directly supports it
-        'labels': tokenized_output['input_ids']    # assuming the labels should match the output token ids
-    }
+def apply_chat_template(
+    example,
+    tokenizer,
+):
+    messages = example["messages"]
+    # Add an empty system message if there is none
+    if messages[0]["role"] != "system":
+        messages.insert(0, {"role": "system", "content": ""})
+    example["text"] = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=False)
+    return example
+
 
 # Load your dataset
 raw_dataset = load_dataset("json", data_files="train_dataset.jsonl", split='train')
@@ -167,22 +169,22 @@ test_dataset = train_test_split['test']
 
 column_names = list(train_dataset.features)
 
-# Assuming train_dataset and test_dataset are already defined and contain 'input' and 'output' fields
 processed_train_dataset = train_dataset.map(
     apply_chat_template,
-    batched=True,  # Process in batches
-    num_proc=10,   # Using multiprocessing to speed up the processing
-    remove_columns=['input', 'output'],  # Remove the original columns to keep only the processed ones
-    desc="Applying chat template to training data"
+    fn_kwargs={"tokenizer": tokenizer},
+    num_proc=10,
+    remove_columns=column_names,
+    desc="Applying chat template to train_sft",
 )
 
 processed_test_dataset = test_dataset.map(
     apply_chat_template,
-    batched=True,
+    fn_kwargs={"tokenizer": tokenizer},
     num_proc=10,
-    remove_columns=['input', 'output'],
-    desc="Applying chat template to testing data"
+    remove_columns=column_names,
+    desc="Applying chat template to test_sft",
 )
+
 
 ###########
 # Training
