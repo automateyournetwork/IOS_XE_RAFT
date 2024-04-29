@@ -41,8 +41,8 @@ def load_language_model():
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
     )
-    model = attach_lora_adapters(model)
-    print_trainable_parameters(model)
+    # model = attach_lora_adapters(model)
+    # print_trainable_parameters(model)
     return model
 
 def run_pyats_job():
@@ -121,23 +121,23 @@ def tokenize_and_format(batch, tokenizer):
         "labels": model_outputs['input_ids']
     }
 
-def attach_lora_adapters(model):
-    # Configuring LoRA
-    config = LoraConfig(
-        r=32,
-        lora_alpha=64,
-        target_modules=[
-            "Wqkv",
-            "fc1",
-            "fc2",
-        ],
-        bias="none",
-        lora_dropout=0.05,  # Conventional
-        task_type="CAUSAL_LM",
-    )
-    # Applying LoRA to the model
-    model = get_peft_model(model, config)
-    return model
+# def attach_lora_adapters(model):
+#     # Configuring LoRA
+#     config = LoraConfig(
+#         r=32,
+#         lora_alpha=64,
+#         target_modules=[
+#             "Wqkv",
+#             "fc1",
+#             "fc2",
+#         ],
+#         bias="none",
+#         lora_dropout=0.05,  # Conventional
+#         task_type="CAUSAL_LM",
+#     )
+#     # Applying LoRA to the model
+#     model = get_peft_model(model, config)
+#     return model
 
 def print_trainable_parameters(model):
     """
