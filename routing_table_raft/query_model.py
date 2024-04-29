@@ -5,14 +5,14 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel  # Ensure PEFT is correctly imported
 from dotenv import load_dotenv
 
-def main():
+def main():   
     model_dir = "./phi3-routing-table"
     base_model = "microsoft/Phi-3-mini-128k-instruct"  # Base model for reference if needed
 
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
-    # Load the base Phi-3 model
+    # Load the base model
     try:
         base_model_instance = AutoModelForCausalLM.from_pretrained(base_model, local_files_only=True)
         print("Base model loaded successfully.")
@@ -20,9 +20,14 @@ def main():
         print(f"Failed to load base model: {e}")
         return
 
-    # Load the fine-tuned PEFT model
+    # Resize token embeddings if necessary
+    if len(tokenizer) != model.config.vocab_size:
+        print("Resizing token embeddings to match tokenizer's vocabulary size.")
+        model.resize_token_embeddings(len(tokenizer))
+
+    # Apply PEFT or load a PEFT model
     try:
-        fine_tuned_model = PeftModel.from_pretrained(model_dir)  # Adjust as necessary
+        fine_tuned_model  = PeftModel.from_pretrained(model, model_dir)  # Adjust as necessary
         print("PEFT model loaded successfully.")
     except Exception as e:
         print(f"Failed to load PEFT model: {e}")
@@ -32,7 +37,7 @@ def main():
     tokenizer.save_pretrained(model_dir)
     base_model_instance.save_pretrained(model_dir)
 
-    # Example inference to check the models
+    # Example inference to check the model
     questions = [
         "What is my default route, the next hop, and outgoing interface?",
         "What is the next hop for my default route?",
@@ -51,8 +56,11 @@ def main():
 
 def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
     """Generate answers using the fine-tuned model."""
-    prompt = f"You are a computer networking expert. {question} Answer:"
-
+    # Enhanced prompt with system role introduction and user question
+    system_intro = "You are a computer networking expert specializing in network routing tables with access to my routing table which was fine tuned into your knowledge base."
+    user_question = f"User: {question}"
+    prompt = f"{system_intro} {user_question} Answer:"
+    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device).eval()
 
@@ -65,7 +73,8 @@ def ask_model(question, model, tokenizer, max_length=512, num_beams=5):
             attention_mask=inputs['attention_mask'],
             max_length=max_length,
             num_beams=num_beams,
-            early_stopping=True
+            early_stopping=True,
+            do_sample=True  # Lower for more deterministic output
         )
 
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
