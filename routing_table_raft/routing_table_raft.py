@@ -89,21 +89,21 @@ class ChatWithRoutingTable:
             for data in formatted_data_pairs:
                 file.write(json.dumps(data) + '\n')
 
-    def formatting_func(self, example):
-        # Extract question and answer assuming the example is a tuple where
-        # example[0] is the question and example[1] is a dictionary with 'answer' as a key
-        question = example[0]
-        answer = example[1]['answer']
+    # def formatting_func(self, example):
+    #     # Extract question and answer assuming the example is a tuple where
+    #     # example[0] is the question and example[1] is a dictionary with 'answer' as a key
+    #     question = example[0]
+    #     answer = example[1]['answer']
 
-        # Create the formatted dictionary as per the new structure required
-        formatted_example = {
-            "messages": [
-                {"role": "system", "content": "You are a computer networking expert specializing in network routing tables."},
-                {"role": "user", "content": question},
-                {"role": "assistant", "content": answer}
-            ]
-        }
-        return formatted_example
+    #     # Create the formatted dictionary as per the new structure required
+    #     formatted_example = {
+    #         "messages": [
+    #             {"role": "system", "content": "You are a computer networking expert specializing in network routing tables."},
+    #             {"role": "user", "content": question},
+    #             {"role": "assistant", "content": answer}
+    #         ]
+    #     }
+    #     return formatted_example
 
 def formatting_func(example):
     # Format the input and output into a prompt-answer style
@@ -425,7 +425,7 @@ if __name__ == "__main__":
     # chat_instance.create_jsonl(data_pairs)
     # Initialize model and tokenizer
     model = load_language_model()
-    base_model_name = "phi2"
+    base_model_name = ""
     run_name = f"{base_model_name}-routing-table"
     tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-2")
 
