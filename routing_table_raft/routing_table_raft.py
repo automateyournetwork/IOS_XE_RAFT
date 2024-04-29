@@ -72,7 +72,7 @@ training_config = {
     "lr_scheduler_type": "cosine",
     "num_train_epochs": 1,
     "max_steps": -1,
-    "output_dir": "./checkpoint_dir",
+    "output_dir": "./phi3-routing-table",
     "overwrite_output_dir": True,
     "per_device_eval_batch_size": 4,
     "per_device_train_batch_size": 4,
@@ -126,7 +126,8 @@ logger.info(f"PEFT parameters {peft_conf}")
 ################
 # Modle Loading
 ################
-checkpoint_path = "phi3-routing-table"
+checkpoint_path = "microsoft/Phi-3-mini-4k-instruct"
+# checkpoint_path = "microsoft/Phi-3-mini-128k-instruct"
 model_kwargs = dict(
     use_cache=False,
     trust_remote_code=True,
