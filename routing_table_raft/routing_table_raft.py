@@ -46,7 +46,7 @@ peft_config = LoraConfig(
 # Load and prepare dataset
 file_path = "train_dataset.jsonl"
 dataset = load_dataset('json', data_files={'train': file_path}, split='train')
-dataset = dataset.shuffle(seed=42).select(range(min(25000, len(dataset))))
+dataset = dataset.shuffle(seed=42).select(range(min(250, len(dataset))))
 
 def format_dataset(entry):
     # Concatenate system and user messages to form the prompt
