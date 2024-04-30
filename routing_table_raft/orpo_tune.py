@@ -65,8 +65,18 @@ dataset = load_dataset('json', data_files={'train': file_path}, split='train')
 dataset = dataset.shuffle(seed=42).select(range(253))
 
 def format_chat_template(row):
-    row["chosen"] = tokenizer.apply_chat_template(row["chosen"], tokenize=False)
-    row["rejected"] = tokenizer.apply_chat_template(row["rejected"], tokenize=False)
+    messages = row["messages"]
+    user_message = next((msg["content"] for msg in messages if msg["role"] == "user"), None)
+    
+    # Set chosen to user's message (question) if it exists
+    if user_message:
+        row["chosen"] = tokenizer.apply_chat_template(user_message, tokenize=False)
+    else:
+        row["chosen"] = None
+    
+    # Hard code "I don't know" to rejected
+    row["rejected"] = "I don't know"
+    
     return row
 
 dataset = dataset.map(
