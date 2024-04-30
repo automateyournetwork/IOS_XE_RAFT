@@ -10,10 +10,6 @@ def main():
     base_model = "meta-llama/Meta-Llama-3-8B"  # Base model for reference if needed
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    #Move to CUDA
-    base_model_instance = base_model_instance.to(device)
-    fine_tuned_model = fine_tuned_model.to(device)
-
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
