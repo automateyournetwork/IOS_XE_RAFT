@@ -104,7 +104,7 @@ def attach_lora_adapters(model):
     config = LoraConfig(
         r=32,
         lora_alpha=64,
-        target_modules=['gate_up_proj', 'down_proj', 'qkv_proj', 'o_proj']
+        target_modules=['gate_up_proj', 'down_proj', 'qkv_proj', 'o_proj'],
         bias="none",
         lora_dropout=0.05,  # Conventional
         task_type="CAUSAL_LM",
