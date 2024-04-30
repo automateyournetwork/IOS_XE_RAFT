@@ -28,6 +28,14 @@ os.environ["WANDB_PROJECT"] = "phi3-finetune" if "phi3-finetune" else ""
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
 
+# Check if CUDA is available
+if not torch.cuda.is_available():
+    print("CUDA is not available. Exiting...")
+    exit()
+
+# Set device to CUDA
+device = torch.device("cuda")
+
 def load_embedding_model():
     print("Loading Embeddings Model..")
     #return HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-large", model_kwargs={"device": "cuda"})
@@ -36,11 +44,11 @@ def load_embedding_model():
 def load_language_model():
     print("Loading Phi-2 with LoRA adapters..")
     model = AutoModelForCausalLM.from_pretrained(
-        "microsoft/Phi-3-mini-4k-instruct",  # Make sure to use the correct model ID
+        "microsoft/Phi-3-mini-4k-instruct",
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
-    )
+    ).to(device)  # Move model to CUDA
     model = attach_lora_adapters(model)
     print_trainable_parameters(model)
     return model
@@ -89,15 +97,6 @@ class ChatWithRoutingTable:
         with open(filename, 'w') as file:
             for data in formatted_data_pairs:
                 file.write(json.dumps(data) + '\n')
-
-    def formatting_func(self, example):
-        # Adjust this function to handle extracting the answer text from the answer dictionary
-        question = example[0]
-        answer = example[1]['answer']  # Assuming 'answer' is a key in the dictionary that contains the actual response text
-        return {
-            "input": f"### Question: {question}",
-            "output": f"### Answer: {answer}"
-        }
 
 def attach_lora_adapters(model):
     # Configuring LoRA
@@ -421,27 +420,34 @@ if __name__ == "__main__":
     train_dataset = load_dataset('json', data_files='train_dataset.jsonl', split='train')
     print(train_dataset)  # Check initial dataset structure
 
-    def formatting_func(self, example):
-        # Extract question and answer assuming the example is a tuple where
-        # example[0] is the question and example[1] is a dictionary with 'answer' as a key
-        question = example[0]
-        answer = example[1]['answer']
+    def tokenize_and_format(examples):
+        # This assumes 'examples' is a batch from 'train_dataset'
+        inputs = []
+        outputs = []
 
-        # Create the formatted dictionary as per the new structure required
-        formatted_example = {
-            "messages": [
-                {"role": "system", "content": "You are a computer networking expert specializing in network routing tables."},
-                {"role": "user", "content": question},
-                {"role": "assistant", "content": answer}
-            ]
+        # Iterate through each example in the provided batch
+        for example in examples['messages']:
+            # Filter and concatenate messages based on their roles
+            input_text = " ".join(msg['content'] for msg in example if msg['role'] != 'assistant')
+            output_text = " ".join(msg['content'] for msg in example if msg['role'] == 'assistant')
+            inputs.append(input_text)
+            outputs.append(output_text)
+
+        # Tokenize inputs and outputs
+        model_inputs = tokenizer(inputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
+        model_outputs = tokenizer(outputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
+
+        # Return a properly structured dictionary
+        return {
+            "input_ids": model_inputs.input_ids,
+            "attention_mask": model_inputs.attention_mask,
+            "labels": model_outputs.input_ids  # Labels are typically aligned with outputs
         }
-        return formatted_example
-
 
     # Usage of the function in dataset mapping should include error handling
     try:
         tokenized_train_dataset = train_dataset.map(
-            formatting_func,
+            tokenize_and_format,
             batched=True
         )
     except Exception as e:
