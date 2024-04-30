@@ -36,9 +36,6 @@ def main():
         print(f"Failed to load PEFT model: {e}")
         return
 
-    print("Base model first layer weight:", base_model_instance.transformer.wte.weight[0])
-    print("Fine-tuned model first layer weight:", fine_tuned_model.transformer.wte.weight[0])
-
     # Save the adjusted model and tokenizer
     tokenizer.save_pretrained(model_dir)
     base_model_instance.save_pretrained(model_dir)
