@@ -60,26 +60,30 @@ model = AutoModelForCausalLM.from_pretrained(
 model, tokenizer = setup_chat_format(model, tokenizer)
 model = prepare_model_for_kbit_training(model)
 
+def transform_dataset(dataset):
+    transformed_data = []
+    for row in dataset:
+        messages = row["messages"]
+        user_message = next((msg["content"] for msg in messages if msg.get("role") == "user"), None)
+        assistant_message = next((msg["content"] for msg in messages if msg.get("role") == "assistant"), None)
+        
+        if user_message and assistant_message:
+            transformed_row = {
+                "chosen": user_message,  # User's question and answer
+                "rejected": "I don't know"  # Hard-coded rejection
+            }
+            transformed_data.append(transformed_row)
+    
+    return transformed_data
+
 file_path = "train_dataset.jsonl"
 dataset = load_dataset('json', data_files={'train': file_path}, split='train')
 dataset = dataset.shuffle(seed=42).select(range(253))
+dataset = transform_dataset(dataset)
 
 def format_chat_template(row):
-    messages = row["messages"]
-    
-    # Extract user and assistant messages
-    user_message = next((msg["content"] for msg in messages if msg.get("role") == "user"), None)
-    assistant_message = next((msg["content"] for msg in messages if msg.get("role") == "assistant"), None)
-    
-    # Set chosen to user's message (question) if it exists
-    if user_message:
-        row["chosen"] = tokenizer.apply_chat_template(user_message, tokenize=False)
-    else:
-        row["chosen"] = None
-    
-    # Hard code "I don't know" to rejected
-    row["rejected"] = "I don't know"
-    
+    row["chosen"] = tokenizer.apply_chat_template(row["chosen"], tokenize=False)
+    row["rejected"] = tokenizer.apply_chat_template(row["rejected"], tokenize=False)
     return row
 
 dataset = dataset.map(
