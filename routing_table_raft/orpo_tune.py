@@ -67,11 +67,9 @@ dataset = dataset.shuffle(seed=42).select(range(253))
 def format_chat_template(row):
     messages = row["messages"]
     
-    # Check if messages is a list, if not, convert it to a list
-    if not isinstance(messages, list):
-        messages = [{"role": "user", "content": messages}]
-    
+    # Extract user and assistant messages
     user_message = next((msg["content"] for msg in messages if msg.get("role") == "user"), None)
+    assistant_message = next((msg["content"] for msg in messages if msg.get("role") == "assistant"), None)
     
     # Set chosen to user's message (question) if it exists
     if user_message:
