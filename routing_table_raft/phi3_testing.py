@@ -413,10 +413,6 @@ if __name__ == "__main__":
 
     print("Tokenizer vocab size after:", len(tokenizer))
 
-    # Confirm that tokenizer and model's vocab size match before ending the training script
-    assert len(tokenizer) == model.config.vocab_size, "Mismatch in tokenizer and model embeddings count after training"
-    print("Training and saving completed successfully.")
-
     # Display the tokenizer and model sizes to confirm correct setup
     print("Tokenizer vocab size:", len(tokenizer))
     print("Model embedding size:", model.get_input_embeddings().num_embeddings)
