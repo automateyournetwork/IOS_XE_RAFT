@@ -61,15 +61,22 @@ model, tokenizer = setup_chat_format(model, tokenizer)
 model = prepare_model_for_kbit_training(model)
 
 def transform_dataset(dataset):
-    transformed_data = {"chosen": [], "rejected": []}
+    transformed_data = []
     for row in dataset:
         messages = row["messages"]
         user_message = next((msg["content"] for msg in messages if msg.get("role") == "user"), None)
         assistant_message = next((msg["content"] for msg in messages if msg.get("role") == "assistant"), None)
         
         if user_message and assistant_message:
-            transformed_data["chosen"].append(user_message)  # User's question and answer
-            transformed_data["rejected"].append("I don't know")  # Hard-coded rejection
+            # Combine user's question and assistant's answer
+            combined_message = f"{user_message} {assistant_message}"
+            transformed_row = {
+                "chosen": combined_message,  # User's question and assistant's answer combined
+                "rejected": "I don't know"   # Hard-coded rejection
+            }
+            transformed_data.append(transformed_row)
+        else:
+            print("Warning: Unexpected input format in transform_dataset function:", row)
     
     return transformed_data
 
