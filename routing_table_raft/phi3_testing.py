@@ -28,14 +28,6 @@ os.environ["WANDB_PROJECT"] = "phi3-finetune" if "phi3-finetune" else ""
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
 
-# Check if CUDA is available
-if not torch.cuda.is_available():
-    print("CUDA is not available. Exiting...")
-    exit()
-
-# Set device to CUDA
-device = torch.device("cuda")
-
 def load_embedding_model():
     print("Loading Embeddings Model..")
     #return HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-large", model_kwargs={"device": "cuda"})
@@ -44,11 +36,11 @@ def load_embedding_model():
 def load_language_model():
     print("Loading Phi-2 with LoRA adapters..")
     model = AutoModelForCausalLM.from_pretrained(
-        "microsoft/Phi-3-mini-4k-instruct",
+        "microsoft/Phi-3-mini-4k-instruct",  # Make sure to use the correct model ID
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
-    ).to(device)  # Move model to CUDA
+    )
     model = attach_lora_adapters(model)
     print_trainable_parameters(model)
     return model
@@ -98,12 +90,21 @@ class ChatWithRoutingTable:
             for data in formatted_data_pairs:
                 file.write(json.dumps(data) + '\n')
 
+    def formatting_func(self, example):
+        # Adjust this function to handle extracting the answer text from the answer dictionary
+        question = example[0]
+        answer = example[1]['answer']  # Assuming 'answer' is a key in the dictionary that contains the actual response text
+        return {
+            "input": f"### Question: {question}",
+            "output": f"### Answer: {answer}"
+        }
+
 def attach_lora_adapters(model):
     # Configuring LoRA
     config = LoraConfig(
         r=32,
         lora_alpha=64,
-        target_modules=['gate_up_proj', 'down_proj', 'qkv_proj', 'o_proj'],
+        target_modules=['gate_up_proj', 'down_proj', 'qkv_proj', 'o_proj']
         bias="none",
         lora_dropout=0.05,  # Conventional
         task_type="CAUSAL_LM",
@@ -395,9 +396,9 @@ if __name__ == "__main__":
     # chat_instance.create_jsonl(data_pairs)
     # Initialize model and tokenizer
     model = load_language_model()
-    base_model_name = "phi3"
+    base_model_name = "phi2"
     run_name = f"{base_model_name}-routing-table"
-    tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-4k-instruct")
+    tokenizer = AutoTokenizer.from_pretrained("Microsoft/phi-2")
 
     print("Tokenizer vocab size before:", len(tokenizer))
     # Add a pad token if it does not exist
@@ -408,9 +409,9 @@ if __name__ == "__main__":
 
     print("Tokenizer vocab size after:", len(tokenizer))
 
-    # # Confirm that tokenizer and model's vocab size match before ending the training script
-    # assert len(tokenizer) == model.config.vocab_size, "Mismatch in tokenizer and model embeddings count after training"
-    # print("Training and saving completed successfully.")
+    # Confirm that tokenizer and model's vocab size match before ending the training script
+    assert len(tokenizer) == model.config.vocab_size, "Mismatch in tokenizer and model embeddings count after training"
+    print("Training and saving completed successfully.")
 
     # Display the tokenizer and model sizes to confirm correct setup
     print("Tokenizer vocab size:", len(tokenizer))
@@ -422,16 +423,8 @@ if __name__ == "__main__":
 
     def tokenize_and_format(examples):
         # This assumes 'examples' is a batch from 'train_dataset'
-        inputs = []
-        outputs = []
-
-        # Iterate through each example in the provided batch
-        for example in examples['messages']:
-            # Filter and concatenate messages based on their roles
-            input_text = " ".join(msg['content'] for msg in example if msg['role'] != 'assistant')
-            output_text = " ".join(msg['content'] for msg in example if msg['role'] == 'assistant')
-            inputs.append(input_text)
-            outputs.append(output_text)
+        inputs = examples['input']
+        outputs = examples['output']
 
         # Tokenize inputs and outputs
         model_inputs = tokenizer(inputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
@@ -486,8 +479,8 @@ if __name__ == "__main__":
         data_collator=DataCollatorForLanguageModeling(tokenizer, mlm=False)
     )
 
-    # # Start training
-    # assert len(tokenizer) == model.get_input_embeddings().num_embeddings, "Mismatch in tokenizer and model embeddings count"
+    # Start training
+    assert len(tokenizer) == model.get_input_embeddings().num_embeddings, "Mismatch in tokenizer and model embeddings count"
     
     print("Training model...")
     trainer.train()
