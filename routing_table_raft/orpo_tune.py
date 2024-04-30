@@ -62,7 +62,7 @@ model = prepare_model_for_kbit_training(model)
 
 file_path = "train_dataset.jsonl"
 dataset = load_dataset('json', data_files={'train': file_path}, split='train')
-dataset = dataset.shuffle(seed=42).select(range(1000))
+dataset = dataset.shuffle(seed=42).select(range(253))
 
 def format_chat_template(row):
     row["chosen"] = tokenizer.apply_chat_template(row["chosen"], tokenize=False)
