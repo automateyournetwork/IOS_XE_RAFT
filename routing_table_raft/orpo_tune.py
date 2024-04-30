@@ -91,6 +91,7 @@ dataset = dataset.shuffle(seed=42).select(range(253))
 
 # Transform dataset
 transformed_dataset = transform_dataset(dataset)
+print(transformed_dataset[:5])
 
 # Ensure that transformed_dataset is a list of dictionaries
 assert all(isinstance(item, dict) for item in transformed_dataset), "transformed_dataset must be a list of dictionaries"
