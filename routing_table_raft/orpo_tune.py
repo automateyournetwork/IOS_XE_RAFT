@@ -74,14 +74,12 @@ def transform_dataset(dataset):
     return transformed_data
 
 def format_chat_template(row):
-    if isinstance(row, str):
-        # If the input is a string, consider it as the chosen value and hard-code the rejected value
-        chosen = row
-        rejected = "I don't know"
+    if isinstance(row, dict):
+        row["chosen"] = tokenizer.apply_chat_template(row.get("chosen", ""), tokenize=False)
+        row["rejected"] = tokenizer.apply_chat_template(row.get("rejected", "I don't know"), tokenize=False)
     else:
-        chosen = tokenizer.apply_chat_template(row["chosen"], tokenize=False)
-        rejected = tokenizer.apply_chat_template(row["rejected"], tokenize=False)
-    return {"chosen": chosen, "rejected": rejected}
+        print("Warning: Unexpected input format in format_chat_template function:", row)
+    return row
 
 file_path = "train_dataset.jsonl"
 dataset = load_dataset('json', data_files={'train': file_path}, split='train')
