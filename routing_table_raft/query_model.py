@@ -50,9 +50,9 @@ def main():
         "What is the outgoing interface for route 0.0.0.0/0?"
     ]
 
-    test_model("Base Model", base_model_instance, tokenizer, questions, device)
     test_model("Fine-Tuned Model", fine_tuned_model, tokenizer, questions, device)
-
+    test_model("Base Model", base_model_instance, tokenizer, questions, device)
+    
 def test_model(model_name, model, tokenizer, questions, device):
     print(f"\nTesting {model_name}:")
     for question in questions:
