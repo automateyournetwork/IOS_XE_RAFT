@@ -42,12 +42,12 @@ def main():
 
     # Example inference to check the model
     questions = [
-        "Answer the following question: What is my default route?",
-        "Answer the following question: What is my default route, the next hop, and outgoing interface? Hint: it is 0.0.0.0/0.",
-        "Answer the following question: What is the next hop for my default route?",
-        "Answer the following question: What interface does my default route use?",
-        "Answer the following question: What is the next hop for route 0.0.0.0/0?",
-        "Answer the following question: What is the outgoing interface for route 0.0.0.0/0?"
+        "What is my default route?",
+        "What is my default route, the next hop, and outgoing interface? Hint: it is 0.0.0.0/0.",
+        "What is the next hop for my default route?",
+        "What interface does my default route use?",
+        "What is the next hop for route 0.0.0.0/0?",
+        "What is the outgoing interface for route 0.0.0.0/0?"
     ]
 
     test_model("Base Model", base_model_instance, tokenizer, questions, device)
@@ -60,9 +60,7 @@ def test_model(model_name, model, tokenizer, questions, device):
         print(f"Question: {question}\nAnswer: {answer}\n")
 
 def ask_model(question, model, tokenizer, device, max_length=512, num_beams=5):
-    prompt = f"{question}"  # Direct question without introductory text
-
-    inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
+    inputs = tokenizer(question, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
     inputs = {k: v.to(device) for k, v in inputs.items()}
 
     with torch.no_grad():
@@ -71,7 +69,8 @@ def ask_model(question, model, tokenizer, device, max_length=512, num_beams=5):
             attention_mask=inputs['attention_mask'],
             max_length=max_length,
             num_beams=num_beams,
-            early_stopping=True
+            early_stopping=True,
+            temperature=0.7
         )
 
     return tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
