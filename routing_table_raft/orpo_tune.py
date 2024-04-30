@@ -4,7 +4,6 @@ import os
 import torch
 import wandb
 from datasets import load_dataset
-from google.colab import userdata
 from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training
 from transformers import (
     AutoModelForCausalLM,
@@ -15,8 +14,9 @@ from transformers import (
 )
 from trl import ORPOConfig, ORPOTrainer, setup_chat_format
 
-wb_token = userdata.get('wandb')
-wandb.login(key=wb_token)
+# Initialize wandb
+wandb.login()
+os.environ["WANDB_PROJECT"] = "phi3-finetune" if "phi3-finetune" else ""
 
 if torch.cuda.get_device_capability()[0] >= 8:
     attn_implementation = "flash_attention_2"
