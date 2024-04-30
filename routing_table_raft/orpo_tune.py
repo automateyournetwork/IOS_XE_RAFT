@@ -70,7 +70,7 @@ def transform_dataset(dataset):
         if user_message and assistant_message:
             transformed_row = {
                 "prompt": user_message,  # Use the user's question as the prompt
-                "chosen": user_message,  # User's question and answer
+                "chosen": assistant_message,  # Assistant's answer
                 "rejected": "I don't know"  # Hard-coded rejection
             }
             transformed_data.append(transformed_row)
