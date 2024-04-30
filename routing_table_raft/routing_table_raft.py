@@ -19,8 +19,6 @@ print("Using device:", device)
 base_model = "microsoft/Phi-3-mini-4k-instruct"
 new_model = "phi3-routing-table"
 
-
-
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_quant_type="nf4",
@@ -34,8 +32,6 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map="auto",
     trust_remote_code=True
 )
-
-model.to(device)
 
 tokenizer = AutoTokenizer.from_pretrained(base_model)
 
