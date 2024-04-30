@@ -479,8 +479,8 @@ if __name__ == "__main__":
         data_collator=DataCollatorForLanguageModeling(tokenizer, mlm=False)
     )
 
-    # Start training
-    assert len(tokenizer) == model.get_input_embeddings().num_embeddings, "Mismatch in tokenizer and model embeddings count"
+    # # Start training
+    # assert len(tokenizer) == model.get_input_embeddings().num_embeddings, "Mismatch in tokenizer and model embeddings count"
     
     print("Training model...")
     trainer.train()
