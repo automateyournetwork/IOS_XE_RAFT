@@ -52,7 +52,7 @@ def main():
 
     test_model("Fine-Tuned Model", fine_tuned_model, tokenizer, questions, device)
     test_model("Base Model", base_model_instance, tokenizer, questions, device)
-    
+
 def test_model(model_name, model, tokenizer, questions, device):
     print(f"\nTesting {model_name}:")
     for question in questions:
@@ -60,19 +60,28 @@ def test_model(model_name, model, tokenizer, questions, device):
         print(f"Question: {question}\nAnswer: {answer}\n")
 
 def ask_model(question, model, tokenizer, device, max_length=512, num_beams=5):
-    inputs = tokenizer(question, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
+    # Directly use the question as the prompt without any additional text.
+    prompt = question
+
+    # Tokenizing the prompt to prepare input for the model.
+    inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
     inputs = {k: v.to(device) for k, v in inputs.items()}
 
+    print("Prompt:", prompt)
+    print("Tokenized inputs:", inputs)
+    
+    # Generating the response using the model.
     with torch.no_grad():
         outputs = model.generate(
             input_ids=inputs['input_ids'],
             attention_mask=inputs['attention_mask'],
             max_length=max_length,
             num_beams=num_beams,
-            early_stopping=True,
-            temperature=0.7
+            early_stopping=True
         )
 
+    print("Generated outputs:", tokenizer.decode(outputs[0], skip_special_tokens=True).strip())
+    # Decoding and returning the response, ensuring special tokens are skipped.
     return tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
 
 if __name__ == "__main__":
