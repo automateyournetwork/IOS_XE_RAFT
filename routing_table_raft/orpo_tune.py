@@ -67,14 +67,9 @@ def transform_dataset(dataset):
         user_message = next((msg["content"] for msg in messages if msg.get("role") == "user"), None)
         assistant_message = next((msg["content"] for msg in messages if msg.get("role") == "assistant"), None)
         
-        if user_message:
-            prompt_row = {
-                "prompt": user_message
-            }
-            transformed_data.append(prompt_row)
-        
         if user_message and assistant_message:
             transformed_row = {
+                "prompt": user_message,  # Use the user's question as the prompt
                 "chosen": user_message,  # User's question and answer
                 "rejected": "I don't know"  # Hard-coded rejection
             }
