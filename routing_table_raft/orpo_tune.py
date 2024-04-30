@@ -16,7 +16,7 @@ from trl import ORPOConfig, ORPOTrainer, setup_chat_format
 
 # Initialize wandb
 wandb.login()
-os.environ["WANDB_PROJECT"] = "phi3-finetune" if "phi3-finetune" else ""
+os.environ["WANDB_PROJECT"] = "llama3-finetune" if "llam3-finetune" else ""
 
 if torch.cuda.get_device_capability()[0] >= 8:
     attn_implementation = "flash_attention_2"

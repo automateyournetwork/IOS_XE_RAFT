@@ -6,8 +6,8 @@ from peft import PeftModel  # Ensure PEFT is correctly imported
 from dotenv import load_dotenv
 
 def main():   
-    model_dir = "./phi3-routing-table"
-    base_model = "microsoft/Phi-3-mini-4k-instruct"  # Base model for reference if needed
+    model_dir = "./llama3-routing-table"
+    base_model = "meta-llama/Meta-Llama-3-8B"  # Base model for reference if needed
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load tokenizer
