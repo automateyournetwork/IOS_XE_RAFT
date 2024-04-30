@@ -28,6 +28,8 @@ os.environ["WANDB_PROJECT"] = "phi3-finetune" if "phi3-finetune" else ""
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 def load_embedding_model():
     print("Loading Embeddings Model..")
     #return HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-large", model_kwargs={"device": "cuda"})
@@ -35,22 +37,15 @@ def load_embedding_model():
 
 def load_language_model():
     print("Loading Phi-2 with LoRA adapters..")
-
-    # Check if CUDA is available and set the default device accordingly
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
-
-    # Load the pre-trained model and move it to the selected device
     model = AutoModelForCausalLM.from_pretrained(
-        "microsoft/Phi-3-mini-4k-instruct",  # Correct model ID
+        "microsoft/Phi-3-mini-4k-instruct",  # Make sure to use the correct model ID
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
-    ).to(device)  # Move the model to the specified device
-
-    model = attach_lora_adapters(model)  # Attach LoRA adapters, which should also be on the same device
+    )
+    model.to(device)
+    model = attach_lora_adapters(model)
     print_trainable_parameters(model)
-    
     return model
 
 def run_pyats_job():
