@@ -16,7 +16,7 @@ from trl import ORPOConfig, ORPOTrainer, setup_chat_format
 
 # Initialize wandb
 wandb.login()
-os.environ["WANDB_PROJECT"] = "llama3-finetune" if "llam3-finetune" else ""
+os.environ["WANDB_PROJECT"] = "phi3-finetune" if "phi3-finetune" else ""
 
 if torch.cuda.get_device_capability()[0] >= 8:
     attn_implementation = "flash_attention_2"
@@ -26,8 +26,8 @@ else:
     torch_dtype = torch.float16
 
 # Model
-base_model = "meta-llama/Meta-Llama-3-8B"
-new_model = "llama3_routing_table"
+base_model = "microsoft/Phi-3-mini-4k-instruct"
+new_model = "phi3_routing_table"
 
 # QLoRA config
 bnb_config = BitsAndBytesConfig(
@@ -44,7 +44,7 @@ peft_config = LoraConfig(
     lora_dropout=0.05,
     bias="none",
     task_type="CAUSAL_LM",
-    target_modules=['up_proj', 'down_proj', 'gate_proj', 'k_proj', 'q_proj', 'v_proj', 'o_proj']
+    target_modules=['gate_up_proj', 'down_proj', 'qkv_proj', 'o_proj']
 )
 
 # Load tokenizer
