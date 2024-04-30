@@ -1,6 +1,6 @@
 import gc
 import os
-
+from datasets import Dataset
 import torch
 import wandb
 from datasets import load_dataset
@@ -76,21 +76,26 @@ def transform_dataset(dataset):
     
     return transformed_data
 
-file_path = "train_dataset.jsonl"
-dataset = load_dataset('json', data_files={'train': file_path}, split='train')
-dataset = dataset.shuffle(seed=42).select(range(253))
-dataset = transform_dataset(dataset)
-
 def format_chat_template(row):
     row["chosen"] = tokenizer.apply_chat_template(row["chosen"], tokenize=False)
     row["rejected"] = tokenizer.apply_chat_template(row["rejected"], tokenize=False)
     return row
 
-dataset = dataset.map(
+file_path = "train_dataset.jsonl"
+dataset = load_dataset('json', data_files={'train': file_path}, split='train')
+dataset = dataset.shuffle(seed=42).select(range(253))
+
+# Transform dataset
+transformed_dataset = transform_dataset(dataset)
+transformed_dataset = Dataset.from_dict(transformed_dataset)  # Convert to Dataset object
+
+# Apply format_chat_template function
+formatted_dataset = transformed_dataset.map(
     format_chat_template,
-    num_proc= os.cpu_count(),
+    num_proc=os.cpu_count(),
 )
-dataset = dataset.train_test_split(test_size=0.01)
+
+formatted_dataset = formatted_dataset.train_test_split(test_size=0.01)
 
 orpo_args = ORPOConfig(
     learning_rate=8e-6,
@@ -114,8 +119,8 @@ orpo_args = ORPOConfig(
 trainer = ORPOTrainer(
     model=model,
     args=orpo_args,
-    train_dataset=dataset["train"],
-    eval_dataset=dataset["test"],
+    train_dataset=formatted_dataset["train"],
+    eval_dataset=formatted_dataset["test"],
     peft_config=peft_config,
     tokenizer=tokenizer,
 )
