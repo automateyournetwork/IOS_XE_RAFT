@@ -28,6 +28,7 @@ os.environ["WANDB_PROJECT"] = "phi3-finetune" if "phi3-finetune" else ""
 load_dotenv()
 openai_api_key = os.getenv('OPENAI_API_KEY')
 
+torch.cuda.empty_cache()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def load_embedding_model():
