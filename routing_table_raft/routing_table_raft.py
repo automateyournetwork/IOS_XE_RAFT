@@ -1,6 +1,8 @@
 import os
 import torch
 from datasets import load_dataset
+# Disable tokenizer parallelism to avoid potential deadlocks
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from peft import LoraConfig, prepare_model_for_kbit_training
 from transformers import (
         AutoModelForCausalLM,
