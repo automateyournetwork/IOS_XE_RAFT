@@ -11,10 +11,6 @@ from transformers import (
     )
 from trl import ORPOConfig, ORPOTrainer, setup_chat_format
 
-# Check if CUDA is available and set the default device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print("Using device:", device)
-
 # Modela
 base_model = "microsoft/Phi-3-mini-4k-instruct"
 new_model = "phi3-routing-table"
@@ -81,14 +77,14 @@ orpo_args = ORPOConfig(
     max_length=512,
     max_prompt_length=246,
     beta=0.1,
-    per_device_train_batch_size=50,
-    per_device_eval_batch_size=50,
+    per_device_train_batch_size=25,
+    per_device_eval_batch_size=25,
     gradient_accumulation_steps=4,
     optim="paged_adamw_8bit",
     num_train_epochs=1,
     evaluation_strategy="steps",
-    eval_steps=50,
-    logging_steps=50,
+    eval_steps=25,
+    logging_steps=25,
     warmup_steps=10,
     output_dir=new_model,
     push_to_hub=False
