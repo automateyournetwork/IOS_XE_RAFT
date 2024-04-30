@@ -11,9 +11,15 @@ from transformers import (
     )
 from trl import ORPOConfig, ORPOTrainer, setup_chat_format
 
-# Model
+# Check if CUDA is available and set the default device
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
+
+# Modela
 base_model = "microsoft/Phi-3-mini-4k-instruct"
 new_model = "phi3-routing-table"
+
+
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
@@ -28,6 +34,8 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map="auto",
     trust_remote_code=True
 )
+
+model.to(device)
 
 tokenizer = AutoTokenizer.from_pretrained(base_model)
 
