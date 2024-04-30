@@ -1,6 +1,6 @@
 import gc
 import os
-from datasets import Dataset
+from datasets import load_dataset, Dataset
 import torch
 import wandb
 from datasets import load_dataset
@@ -61,19 +61,16 @@ model, tokenizer = setup_chat_format(model, tokenizer)
 model = prepare_model_for_kbit_training(model)
 
 def transform_dataset(dataset):
-    transformed_data = []
+    transformed_data = {'prompt': [], 'chosen': [], 'rejected': []}
     for row in dataset:
         messages = row["messages"]
         user_message = next((msg["content"] for msg in messages if msg.get("role") == "user"), None)
         assistant_message = next((msg["content"] for msg in messages if msg.get("role") == "assistant"), None)
         
         if user_message and assistant_message:
-            transformed_row = {
-                "prompt": user_message,  # Use the user's question as the prompt
-                "chosen": assistant_message,  # Assistant's answer
-                "rejected": "I don't know"  # Hard-coded rejection
-            }
-            transformed_data.append(transformed_row)
+            transformed_data['prompt'].append(user_message)
+            transformed_data['chosen'].append(assistant_message)
+            transformed_data['rejected'].append("I don't know")
     
     return transformed_data
 
@@ -85,28 +82,27 @@ def format_chat_template(row):
         print("Warning: Unexpected input format in format_chat_template function:", row)
     return row
 
+# Load the dataset
 file_path = "train_dataset.jsonl"
 dataset = load_dataset('json', data_files={'train': file_path}, split='train')
 dataset = dataset.shuffle(seed=42).select(range(253))
 
 # Transform dataset
 transformed_dataset = transform_dataset(dataset)
-print(transformed_dataset[:5])
 
-# Ensure that transformed_dataset is a list of dictionaries
-assert all(isinstance(item, dict) for item in transformed_dataset), "transformed_dataset must be a list of dictionaries"
-
-# Convert the list of dictionaries to a Dataset object
+# Convert the structured data to a Dataset object
 formatted_dataset = Dataset.from_dict(transformed_dataset)
 
 # Apply format_chat_template function
 formatted_dataset = formatted_dataset.map(
     format_chat_template,
     num_proc=os.cpu_count(),
+    batched=True  # Assuming batch processing if necessary
 )
 
 # Split the dataset
 formatted_dataset = formatted_dataset.train_test_split(test_size=0.01)
+
 
 orpo_args = ORPOConfig(
     learning_rate=8e-6,
