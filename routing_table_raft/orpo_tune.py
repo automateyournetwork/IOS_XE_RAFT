@@ -91,14 +91,17 @@ dataset = dataset.shuffle(seed=42).select(range(253))
 
 # Transform dataset
 transformed_dataset = transform_dataset(dataset)
-transformed_dataset = Dataset.from_dict(transformed_dataset)  # Convert to Dataset object
+
+# Convert to Dataset object
+formatted_dataset = Dataset.from_dict(transformed_dataset)
 
 # Apply format_chat_template function
-formatted_dataset = transformed_dataset.map(
+formatted_dataset = formatted_dataset.map(
     format_chat_template,
     num_proc=os.cpu_count(),
 )
 
+# Split the dataset
 formatted_dataset = formatted_dataset.train_test_split(test_size=0.01)
 
 orpo_args = ORPOConfig(
