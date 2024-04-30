@@ -400,9 +400,9 @@ if __name__ == "__main__":
     # chat_instance.create_jsonl(data_pairs)
     # Initialize model and tokenizer
     model = load_language_model()
-    base_model_name = "phi2"
+    base_model_name = "phi3"
     run_name = f"{base_model_name}-routing-table"
-    tokenizer = AutoTokenizer.from_pretrained("Microsoft/phi-2")
+    tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-4k-instruct")
 
     print("Tokenizer vocab size before:", len(tokenizer))
     # Add a pad token if it does not exist
