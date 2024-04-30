@@ -421,26 +421,27 @@ if __name__ == "__main__":
     train_dataset = load_dataset('json', data_files='train_dataset.jsonl', split='train')
     print(train_dataset)  # Check initial dataset structure
 
-    def tokenize_and_format(examples):
-        # This assumes 'examples' is a batch from 'train_dataset'
-        inputs = examples['input']
-        outputs = examples['output']
+    def formatting_func(self, example):
+        # Extract question and answer assuming the example is a tuple where
+        # example[0] is the question and example[1] is a dictionary with 'answer' as a key
+        question = example[0]
+        answer = example[1]['answer']
 
-        # Tokenize inputs and outputs
-        model_inputs = tokenizer(inputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
-        model_outputs = tokenizer(outputs, padding="max_length", truncation=True, max_length=512, return_tensors="pt")
-
-        # Return a properly structured dictionary
-        return {
-            "input_ids": model_inputs.input_ids,
-            "attention_mask": model_inputs.attention_mask,
-            "labels": model_outputs.input_ids  # Labels are typically aligned with outputs
+        # Create the formatted dictionary as per the new structure required
+        formatted_example = {
+            "messages": [
+                {"role": "system", "content": "You are a computer networking expert specializing in network routing tables."},
+                {"role": "user", "content": question},
+                {"role": "assistant", "content": answer}
+            ]
         }
+        return formatted_example
+
 
     # Usage of the function in dataset mapping should include error handling
     try:
         tokenized_train_dataset = train_dataset.map(
-            tokenize_and_format,
+            formatting_func,
             batched=True
         )
     except Exception as e:
