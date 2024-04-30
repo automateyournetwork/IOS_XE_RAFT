@@ -36,21 +36,23 @@ def main():
         print(f"Failed to load PEFT model: {e}")
         return
 
+    print("Base model first layer weight:", base_model_instance.transformer.wte.weight[0])
+    print("Fine-tuned model first layer weight:", fine_tuned_model.transformer.wte.weight[0])
+
     # Save the adjusted model and tokenizer
     tokenizer.save_pretrained(model_dir)
     base_model_instance.save_pretrained(model_dir)
 
     # Example inference to check the model
     questions = [
-        "Answer the following question: What is my default route?"
-        "Answer the following question:What is my default route, the next hop, and outgoing interface? Hint: it is 0.0.0.0/0.",
-        "Answer the following question:What is the next hop for my default route?",
-        "Answer the following question:What interface does my default route use?",
-        "Answer the following question:What is the next hop for route 0.0.0.0/0?"
-        "Answer the following question:What is the outgoing interface for route 0.0.0.0/0?"
+        "Answer the following question: What is my default route?",
+        "Answer the following question: What is my default route, the next hop, and outgoing interface? Hint: it is 0.0.0.0/0.",
+        "Answer the following question: What is the next hop for my default route?",
+        "Answer the following question: What interface does my default route use?",
+        "Answer the following question: What is the next hop for route 0.0.0.0/0?",
+        "Answer the following question: What is the outgoing interface for route 0.0.0.0/0?"
     ]
 
-    # Testing the models
     test_model("Base Model", base_model_instance, tokenizer, questions, device)
     test_model("Fine-Tuned Model", fine_tuned_model, tokenizer, questions, device)
 
