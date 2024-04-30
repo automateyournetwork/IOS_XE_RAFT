@@ -61,18 +61,15 @@ model, tokenizer = setup_chat_format(model, tokenizer)
 model = prepare_model_for_kbit_training(model)
 
 def transform_dataset(dataset):
-    transformed_data = []
+    transformed_data = {"chosen": [], "rejected": []}
     for row in dataset:
         messages = row["messages"]
         user_message = next((msg["content"] for msg in messages if msg.get("role") == "user"), None)
         assistant_message = next((msg["content"] for msg in messages if msg.get("role") == "assistant"), None)
         
         if user_message and assistant_message:
-            transformed_row = {
-                "chosen": user_message,  # User's question and answer
-                "rejected": "I don't know"  # Hard-coded rejection
-            }
-            transformed_data.append(transformed_row)
+            transformed_data["chosen"].append(user_message)  # User's question and answer
+            transformed_data["rejected"].append("I don't know")  # Hard-coded rejection
     
     return transformed_data
 
