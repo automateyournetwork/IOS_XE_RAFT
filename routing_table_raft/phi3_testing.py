@@ -35,14 +35,22 @@ def load_embedding_model():
 
 def load_language_model():
     print("Loading Phi-2 with LoRA adapters..")
+
+    # Check if CUDA is available and set the default device accordingly
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    # Load the pre-trained model and move it to the selected device
     model = AutoModelForCausalLM.from_pretrained(
-        "microsoft/Phi-3-mini-4k-instruct",  # Make sure to use the correct model ID
+        "microsoft/Phi-3-mini-4k-instruct",  # Correct model ID
         trust_remote_code=True,
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True
-    )
-    model = attach_lora_adapters(model)
+    ).to(device)  # Move the model to the specified device
+
+    model = attach_lora_adapters(model)  # Attach LoRA adapters, which should also be on the same device
     print_trainable_parameters(model)
+    
     return model
 
 def run_pyats_job():
